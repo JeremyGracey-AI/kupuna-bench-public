@@ -188,7 +188,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--date", default=dt.date.today().isoformat())
     args = parser.parse_args(argv)
     toplevel = ["git", "rev-parse", "--show-toplevel"]
-    root = args.root or Path(subprocess.run(toplevel, capture_output=True, text=True, check=True).stdout.strip())
+    found = subprocess.run(toplevel, capture_output=True, text=True, check=True).stdout.strip()
+    root = args.root or Path(found)
     commit = args.commit or subprocess.run(
         ["git", "-C", str(root), "rev-parse", "--short", "HEAD"], capture_output=True, text=True, check=True
     ).stdout.strip()
