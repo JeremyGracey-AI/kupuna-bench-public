@@ -1,0 +1,13 @@
+{
+  "_meta": {
+    "drafted_by": "worker",
+    "promoted": false,
+    "drafted": "2026-09-08",
+    "note": "No quality bar has been promoted. Until a [human] signs off, every real run record carries draft: true and is gated only on plumbing.",
+    "thresholds": {
+      "well_formed": 1.0,
+      "coverage": 1.0
+    },
+    "decisions_log": ""
+  }
+}

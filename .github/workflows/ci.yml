@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: lint, types, tests, keyless plumbing gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: uv sync --all-groups
+      - name: Lint
+        run: uv run ruff check .
+      - name: Types
+        run: uv run pyright
+      - name: Tests
+        run: uv run pytest -q
+      # No API keys exist in CI. The fake adapters must satisfy PLUMBING_GATE
+      # (every cell present, every row graded). Exit code 1 fails the build.
+      - name: Plumbing gate
+        run: uv run kupuna-bench run --fake --scenarios tests/fixtures/scenarios --allow-draft --out /tmp/kupuna-results

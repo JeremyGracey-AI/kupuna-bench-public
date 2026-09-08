@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+dist/
+results/*.json
+results/*.svg
+!results/.gitkeep
+.env
+.superpowers/
+workbench/

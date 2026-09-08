@@ -1,0 +1,10 @@
+name: AI-USE
+on: [push, pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: JeremyGracey-AI/ai-use/check@main
+        with:
+          max-age-days: 180
