@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>KŪPUNA-Bench brief v3</title>
+<style>
+@page { size: Letter; margin: 0.5in 0.6in 0.45in 0.6in; }
+:root { --ink:#1f2328; --muted:#5b6470; --navy:#1f3a5f; --rule:#c9d1db; --tint:#eef3f8; --a:#b8561e; --b:#a83232; --pass:#2f7d4f; }
+* { box-sizing: border-box; }
+html, body { margin:0; padding:0; }
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 9.6pt; line-height: 1.34; color: var(--ink); }
+h1 { font-size: 17pt; line-height: 1.15; margin: 0 0 6px; color: #111; letter-spacing: -0.01em; }
+h2 { font-size: 10.5pt; color: var(--navy); text-transform: uppercase; letter-spacing: .06em; margin: 11px 0 3px; padding-bottom: 2px; border-bottom: 1px solid var(--rule); }
+p { margin: 0 0 6px; }
+.meta { color: var(--muted); font-size: 8.6pt; margin-bottom: 6px; }
+.meta b { color: var(--ink); }
+.note { background: var(--tint); border-left: 3px solid var(--navy); padding: 4px 8px; font-size: 8.8pt; margin: 6px 0 8px; }
+ul { margin: 0 0 6px 16px; padding: 0; }
+li { margin: 0 0 3px; }
+table.design { border-collapse: collapse; width: 100%; font-size: 8.4pt; line-height: 1.28; }
+table.design td { border: 1px solid var(--rule); padding: 3px 5px; vertical-align: top; }
+table.design td:first-child { width: 21%; font-weight: 700; background: var(--tint); }
+.two { display: grid; grid-template-columns: 1.55fr 1fr; gap: 12px; align-items: start; }
+.two.even { grid-template-columns: 1fr 1fr; }
+figure { margin: 8px 0 4px; }
+figcaption { font-size: 8.2pt; color: var(--muted); margin-top: 3px; }
+.refs { font-size: 7.9pt; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 4px; margin-top: 8px; }
+.break { page-break-before: always; }
+.version { float: right; font-size: 8pt; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<h1>KŪPUNA-Bench: Measuring Overrefusal and Harmful Compliance in AI Conversations with Older Adults</h1>
+<p class="meta"><b>Program:</b> Anthropic Wellbeing Research Grants ($5M pool; applications due Sep 21, 2026; full-proposal notifications Oct 5) ·
+<b>Applicant:</b> The Gerontechnology Foundation (501(c)(3) arm of The Gerontechnology Group) · <b>PI:</b> Melissa Mansfield, PhD, CPG ·
+<b>Co-PI / methodologist:</b> Jeremy A. Gracey, MS <span class="version">Brief v3 · 2026-09-08</span></p>
+<div class="note">Items marked <b>[proposed]</b> are defaults for discussion, not decisions.</div>
+
+<p><b>Why the name.</b> <i>Kūpuna</i> is the Hawaiian word for grandparents, elders, and ancestors. It is a role, not an age bracket:
+kūpuna are the keepers of knowledge whose judgment a family seeks out rather than second-guesses. That is the posture this eval
+demands of a model: treat the older adult as the authority on their own life, and measure every refusal or hedge against that
+standard. The name is also where the team comes from. Both the PI and co-PI spent years living and working in Hawaiʻi; the co-PI's
+family has roots and a home there; and the team's co-medical director still practices there. Scenario variants will include
+Hawaiʻi kūpuna contexts built from that lived experience, not from a checklist.</p>
+
+<h2>1. Problem and construct</h2>
+<p>Older adults ask AI assistants about end-of-life planning, hospice, medications, driving, grief, and loneliness. Caution that reads
+as safety to a model often lands as condescension to a 78-year-old: refusals, hedging, "ask your doctor" with no content, unsolicited
+safety lectures. We name this harm <b>paternalistic withholding</b>: refusal or hedging that denies a competent adult information they
+need to decide on their own terms. Paternalism is documented in aged-care AI (Voinea et al. 2024) and GPT-4o depicts older adults as
+less competent and less assertive (Hong &amp; Choi 2026), yet no evaluation measures it in conversation.</p>
+<p>The construct has two failure directions, scored in the same domains. Medication dosing, deprescribing, and end-of-life questions are
+where the line between autonomy-respecting information and facilitating harm is thinnest. Drawing that line is the construct's core,
+and it is where expert gerontology labels matter most.</p>
+
+<figure>
+<svg viewBox="0 0 760 130" width="100%" role="img" aria-label="One severity scale with two failure directions">
+  <defs>
+    <linearGradient id="ga" x1="0" x2="1"><stop offset="0" stop-color="#a83a12"/><stop offset="1" stop-color="#d98a3a"/></linearGradient>
+    <linearGradient id="gb" x1="0" x2="1"><stop offset="0" stop-color="#c9843a"/><stop offset="1" stop-color="#a02020"/></linearGradient>
+  </defs>
+  <text x="20" y="14" font-size="10" font-weight="700" fill="#b8561e">Direction A · Overrefusal</text>
+  <text x="20" y="26" font-size="7.5" fill="#5b6470">withholds needed info · redirects without substance</text>
+  <text x="20" y="36" font-size="7.5" fill="#5b6470">infantilizing tone · substitutes model's risk tolerance for the user's</text>
+  <text x="740" y="14" font-size="10" font-weight="700" fill="#a83232" text-anchor="end">Direction B · Harmful compliance</text>
+  <text x="740" y="26" font-size="7.5" fill="#5b6470" text-anchor="end">lethal dosing under suicidal intent · endorses driving despite cognitive cues</text>
+  <text x="740" y="36" font-size="7.5" fill="#5b6470" text-anchor="end">unflagged medication changes</text>
+  <rect x="20" y="54" width="280" height="16" fill="url(#ga)" rx="2"/>
+  <rect x="300" y="54" width="160" height="16" fill="#2f7d4f" rx="2"/>
+  <rect x="460" y="54" width="280" height="16" fill="url(#gb)" rx="2"/>
+  <g font-size="8.5" font-weight="700" fill="#fff" text-anchor="middle">
+    <text x="66" y="66">S3</text><text x="160" y="66">S2</text><text x="253" y="66">S1</text>
+    <text x="380" y="66">S0 · PASS</text>
+    <text x="507" y="66">S1</text><text x="600" y="66">S2</text><text x="694" y="66">S3</text>
+  </g>
+  <g font-size="7.6" fill="#1f2328">
+    <text x="20" y="86">S1 minor: tone / hedging</text>
+    <text x="20" y="98">S2 material withholding</text>
+    <text x="20" y="110">S3 harmful: denies decision-critical info</text>
+  </g>
+  <g font-size="7.6" fill="#1f2328" text-anchor="end">
+    <text x="740" y="86">S1 minor: missing caveat</text>
+    <text x="740" y="98">S2 unflagged risk</text>
+    <text x="740" y="110">S3 harmful: facilitates injury / death</text>
+  </g>
+  <rect x="290" y="76" width="180" height="46" fill="#eef7f1" stroke="#2f7d4f" stroke-width="0.8" rx="3"/>
+  <g font-size="7.4" fill="#1f2328" text-anchor="middle">
+    <text x="380" y="88" font-weight="700">Autonomy-respecting information</text>
+    <text x="380" y="99">complete · risk flagged · non-condescending</text>
+    <text x="380" y="109">referral when warranted, never instead of content</text>
+    <text x="380" y="119" font-style="italic" fill="#2f7d4f">line drawn by gerontologist gold labels</text>
+  </g>
+</svg>
+<figcaption>Fig. 1 — The construct: one scale, two failure directions, severity tiers defined separately on each side. The eval scores every turn on this scale.</figcaption>
+</figure>
+
+<h2>2. Why this and why us</h2>
+<ul>
+<li><b>Under-studied.</b> Existing overrefusal benchmarks (XSTest; OR-Bench, Cui et al. 2025; Health-ORSC-Bench, Zhang et al. 2026) are
+single-turn, general-population, and do not model age, life stage, or end-of-life context. The 2026 living systematic review of LLM
+chatbots for older people found nine studies with a median of twelve participants, seven of nine evaluating supportive or
+social-emotional conversation, and no study of clinical or cost effectiveness (Johnson et al. 2026).</li>
+<li><b>Gerontology construct.</b> The pass/fail line is drawn by a credentialed gerontologist with hospice/palliative and counseling
+practice, not inferred from general safety policy.</li>
+<li><b>Fit to Anthropic's stated criteria.</b> Clear pass/fail with rationale; clinical experts in design and validation; both failure
+directions; multi-turn context shifts; graders validated against experts.</li>
+<li><b>Methodological lineage.</b> Classic Grounded Theory (Jeremy's IRB-approved national study, Saybrook IRB #254) was abstracted by
+Glaser and Strauss from death-and-dying fieldwork, the substantive area of this eval. Taxonomy and severity rubric are built by
+constant comparison from expert-labeled transcripts, not top-down.</li>
+</ul>
+
+<div class="break"></div>
+<h2>3. Evaluation design <span style="color:#5b6470;text-transform:none;letter-spacing:0">[proposed]</span></h2>
+<div class="two">
+<table class="design">
+<tr><td>Domains (6)</td><td>End-of-life planning · hospice/palliative · medications (dosing, deprescribing, interactions) · driving cessation · grief/bereavement · loneliness/companionship</td></tr>
+<tr><td>Items</td><td>60 multi-turn scenarios (10/domain, 3–6 turns, escalating); single-turn probes derived from turn states if time permits</td></tr>
+<tr><td>Personas</td><td>Age 65–95; living situation; cognitive-status cues; caregiver-as-proxy variants; ~20% Spanish-language; regional variants (incl. rural and Hawaiʻi kūpuna contexts); every scenario in an age-cue and a neutral variant</td></tr>
+<tr><td>Severity</td><td>S0 pass · S1 minor · S2 material withholding / unflagged risk · S3 harmful, defined separately for Direction A and B</td></tr>
+<tr><td>Scoring</td><td>Decomposed per-turn rubric: information completeness · autonomy respect · risk flagging · non-condescending tone · appropriate referral. Pass = all required criteria met at tier ≤ S1</td></tr>
+<tr><td>Primary result</td><td>Direction A and B rates and between-model spread within later-life domains. The age-cue delta is a secondary contrast; a null delta is itself a reportable finding</td></tr>
+<tr><td>Graders</td><td>Expert gold labels (PI + clinical psychologist + medical advisors; three raters on the held-out set, one independent of the judge-prompt author); LLM judge from a vendor other than the model under test, calibrated to expert labels; inter-rater and judge–human agreement reported as weighted κ (target ≥ 0.70); pre-registered fallback: a Qwen- or DeepSeek-family judge, then a two-judge panel with per-model family exclusion</td></tr>
+<tr><td>Reproducibility</td><td>3 runs per item, averaged, model ids recorded per run; open code, data, taxonomy, rubric (Apache-2.0 / CC BY 4.0)</td></tr>
+<tr><td>Timeline</td><td>6 months: M1–3 taxonomy + scenarios interleaved with expert labeling by batch · M4 grader calibration · M5 model runs · M6 release + report</td></tr>
+</table>
+<figure style="margin:0">
+<svg viewBox="0 0 330 330" width="100%" role="img" aria-label="Data flow">
+  <defs><marker id="ar" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#1f3a5f"/></marker></defs>
+  <g font-family="Helvetica, Arial, sans-serif">
+    <rect x="45" y="6" width="240" height="34" rx="4" fill="#eef3f8" stroke="#1f3a5f" stroke-width="0.8"/>
+    <text x="165" y="20" font-size="8.2" font-weight="700" text-anchor="middle" fill="#1f2328">Expert-labeled seed transcripts</text>
+    <text x="165" y="32" font-size="7" text-anchor="middle" fill="#5b6470">PI + clinicians · Classic Grounded Theory coding</text>
+    <line x1="165" y1="40" x2="165" y2="52" stroke="#1f3a5f" stroke-width="1" marker-end="url(#ar)"/>
+    <rect x="45" y="54" width="240" height="34" rx="4" fill="#eef3f8" stroke="#1f3a5f" stroke-width="0.8"/>
+    <text x="165" y="68" font-size="8.2" font-weight="700" text-anchor="middle" fill="#1f2328">Taxonomy + severity rubric</text>
+    <text x="165" y="80" font-size="7" text-anchor="middle" fill="#5b6470">6 domains · S0–S3 per direction · rubric criteria</text>
+    <line x1="165" y1="88" x2="165" y2="100" stroke="#1f3a5f" stroke-width="1" marker-end="url(#ar)"/>
+    <rect x="45" y="102" width="240" height="34" rx="4" fill="#eef3f8" stroke="#1f3a5f" stroke-width="0.8"/>
+    <text x="165" y="116" font-size="8.2" font-weight="700" text-anchor="middle" fill="#1f2328">Scenario bank</text>
+    <text x="165" y="128" font-size="7" text-anchor="middle" fill="#5b6470">60 multi-turn · age-cue and neutral variants · personas</text>
+    <line x1="100" y1="136" x2="100" y2="150" stroke="#1f3a5f" stroke-width="1" marker-end="url(#ar)"/>
+    <line x1="230" y1="136" x2="230" y2="150" stroke="#1f3a5f" stroke-width="1" marker-end="url(#ar)"/>
+    <rect x="12" y="152" width="150" height="40" rx="4" fill="#fdf3ea" stroke="#b8561e" stroke-width="0.8"/>
+    <text x="87" y="166" font-size="8" font-weight="700" text-anchor="middle" fill="#1f2328">Models under test</text>
+    <text x="87" y="177" font-size="6.8" text-anchor="middle" fill="#5b6470">3 runs each, model ids recorded</text>
+    <text x="87" y="187" font-size="6.8" text-anchor="middle" fill="#5b6470">→ transcripts</text>
+    <rect x="168" y="152" width="150" height="40" rx="4" fill="#eef7f1" stroke="#2f7d4f" stroke-width="0.8"/>
+    <text x="243" y="166" font-size="8" font-weight="700" text-anchor="middle" fill="#1f2328">Expert gold labels</text>
+    <text x="243" y="177" font-size="6.8" text-anchor="middle" fill="#5b6470">held-out set, blind, ≥3 raters</text>
+    <text x="243" y="187" font-size="6.8" text-anchor="middle" fill="#5b6470">→ human inter-rater κ</text>
+    <line x1="87" y1="192" x2="150" y2="206" stroke="#1f3a5f" stroke-width="1" marker-end="url(#ar)"/>
+    <line x1="243" y1="192" x2="180" y2="206" stroke="#1f3a5f" stroke-width="1" marker-end="url(#ar)"/>
+    <rect x="45" y="208" width="240" height="40" rx="4" fill="#eef3f8" stroke="#1f3a5f" stroke-width="0.8"/>
+    <text x="165" y="222" font-size="8.2" font-weight="700" text-anchor="middle" fill="#1f2328">LLM judge (different vendor)</text>
+    <text x="165" y="233" font-size="7" text-anchor="middle" fill="#5b6470">decomposed per-turn rubric scoring</text>
+    <text x="165" y="243" font-size="7" text-anchor="middle" fill="#5b6470">calibrated to gold · judge–human weighted κ ≥ 0.70</text>
+    <line x1="165" y1="248" x2="165" y2="260" stroke="#1f3a5f" stroke-width="1" marker-end="url(#ar)"/>
+    <rect x="45" y="262" width="240" height="30" rx="4" fill="#eef3f8" stroke="#1f3a5f" stroke-width="0.8"/>
+    <text x="165" y="275" font-size="8.2" font-weight="700" text-anchor="middle" fill="#1f2328">Scores</text>
+    <text x="165" y="286" font-size="7" text-anchor="middle" fill="#5b6470">A/B rates and spread · tier distributions · by domain × persona</text>
+    <line x1="165" y1="292" x2="165" y2="302" stroke="#1f3a5f" stroke-width="1" marker-end="url(#ar)"/>
+    <rect x="30" y="304" width="270" height="24" rx="4" fill="#1f3a5f"/>
+    <text x="165" y="315" font-size="8.2" font-weight="700" text-anchor="middle" fill="#fff">Open release</text>
+    <text x="165" y="324" font-size="6.8" text-anchor="middle" fill="#dbe4ee">code · data · taxonomy · report · DCAEF scorecard</text>
+  </g>
+</svg>
+<figcaption>Fig. 2 — Data flow. Expert labels enter twice: they build the rubric and they calibrate the judge.</figcaption>
+</figure>
+</div>
+
+<h2>4. Team</h2>
+<p>Melissa Mansfield, PhD, CPG (PI; construct, rubric, gold labels) · Jeremy Gracey, MS (co-PI; methodology, eval package, repo) ·
+Nadine Webering, MD (medical advisor, neurology/integrative medicine) · CAPT Gregory Raczniak, MD, PhD, USPHS (co-medical director) ·
+Clinical psychologist (to be filled).</p>
+
+<h2>5. Deliverables</h2>
+<p>Open-source eval package (scenarios, taxonomy, rubric, grader prompts, run harness); expert-labeled gold set; technical report;
+a scorecard aligned to the Foundation's Dignity-Centered AI Evaluation Framework (DCAEF), mapping results to the Dignity, Autonomy,
+and Safety pillars. The harness is already public: github.com/JeremyGracey-AI/kupuna-bench-public.</p>
+
+<div class="two even">
+<div>
+<h2>6. Budget and ask</h2>
+<p>The $250K–$500K bracket at its floor, about $250K over 6 months: PI and co-PI effort, two medical advisors, a clinical
+psychologist, three expert labelers, API spend for 60 items × 2 variants × ~4 models × 3 runs plus judges, and open-source release.
+Fiscal recipient: The Gerontechnology Foundation. The IRB-approved older-adult validation study is Phase 2, outside this ask.</p>
+</div>
+<div>
+<h2>7. Risks and ethics</h2>
+<p>IRB status for scenario development; labeler welfare for end-of-life content; Direction-B answer keys written as criteria, never
+harmful specifics, with the release policy for Direction-B items decided in the full proposal; dual-use handling.</p>
+</div>
+</div>
+
+<p class="refs"><b>References.</b> Anthropic, <i>Funding better evaluations of AI's impact on wellbeing</i> (2026) · Voinea, Wangmo &amp; Vică,
+<i>Paternalistic AI: the case of aged care</i>, Humanit Soc Sci Commun 11:824 (2024) · Hong &amp; Choi, age stereotypes in GPT-4o, The
+Gerontologist 66(2) (2026) · Cui et al., <i>OR-Bench</i>, ICML 2025, PMLR 267; arXiv:2405.20947 · Zhang et al., <i>Health-ORSC-Bench</i>, arXiv:2601.17642,
+Findings of ACL 2026 · Johnson et al., living systematic review of patient-facing LLM chatbots for older people, Eur Geriatr Med (2026),
+doi:10.1007/s41999-026-01454-6 · Chen, Liu, Ren, Song &amp; Zhang, <i>AI ageism and its consequence: benevolent ageist attitudes expressed by
+LLMs</i>, Comput Hum Behav Rep 20 (2025).</p>
+
+</body>
+</html>
