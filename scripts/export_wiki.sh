@@ -14,6 +14,18 @@ if [ ! -d "$WIKI/.git" ]; then
   git clone "$WIKI_URL" "$WIKI" || {
     echo "the wiki repository does not exist yet: create its first page on GitHub, then rerun" >&2; exit 1; }
 fi
+git -C "$WIKI" fetch -q origin
+git -C "$WIKI" reset -q --hard origin/master
+# Refuse to overwrite hand edits made on GitHub since the last regeneration (ADR-009): they belong in
+# docs/ or docs/wiki/. Port them, commit, then rerun with FORCE=1.
+LAST_GEN="$(git -C "$WIKI" log --format=%H --grep='^\[worker\] regenerate wiki' -n 1 origin/master || true)"
+HAND="$(git -C "$WIKI" log --format='%h %an %s' ${LAST_GEN:+$LAST_GEN..}origin/master)"
+if [ -n "$HAND" ] && [ "${FORCE:-0}" != "1" ]; then
+  echo "the wiki has hand edits since the last regeneration; port them into docs/ or docs/wiki/, commit, then rerun with FORCE=1:" >&2
+  echo "$HAND" >&2
+  git -C "$WIKI" diff ${LAST_GEN:+$LAST_GEN..}origin/master >&2
+  exit 1
+fi
 uv run --project "$SRC" python "$SRC/scripts/build_wiki.py" --root "$SRC" --out "$WIKI" --commit "$COMMIT"
 echo "rendered the wiki from working commit $COMMIT into $WIKI"
 echo "next: cd $WIKI && git add -A && git commit -m \"[worker] regenerate wiki from working commit $COMMIT\" && git push"
