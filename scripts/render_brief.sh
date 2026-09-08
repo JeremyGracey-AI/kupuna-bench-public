@@ -35,10 +35,10 @@ brief = Path(sys.argv[1]).read_text(encoding="utf-8")
 svg = re.search(r'<svg viewBox="0 0 760 130".*?</svg>', brief, re.S).group(0)
 Path(sys.argv[2]).write_text(f"""<!doctype html><html><head><meta charset="utf-8"><style>
 html,body{{margin:0;padding:0}} body{{width:1280px;height:640px;overflow:hidden;background:#ffffff;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:#1f2328;position:relative}}
-.wrap{{padding:54px 72px 0}} h1{{font-size:58px;margin:0 0 8px;letter-spacing:-0.01em;color:#111}}
+.wrap{{padding:54px 72px 0}} h1{{font-size:52px;margin:0 0 8px;letter-spacing:-0.01em;color:#111}} h1 span{{font-weight:400;color:#5b6470}}
 p.tag{{font-size:27px;color:#5b6470;margin:0 0 30px;line-height:1.25}} svg{{width:1136px;height:auto;display:block}}
 .foot{{position:absolute;bottom:34px;left:72px;right:72px;display:flex;justify-content:space-between;font-size:21px;color:#1f3a5f}}
-</style></head><body><div class="wrap"><h1>KŪPUNA-AI Bench</h1><p class="tag">Measuring overrefusal and harmful compliance in AI conversations with older adults</p>{svg}</div>
+</style></head><body><div class="wrap"><h1>KŪPUNA-AI Bench <span>"Let's talk story."</span></h1><p class="tag">Measuring overrefusal and harmful compliance in AI conversations with older adults</p>{svg}</div>
 <div class="foot"><span>github.com/JeremyGracey-AI/kupuna-bench-public</span><span>The Gerontechnology Foundation</span></div></body></html>""", encoding="utf-8")
 PY
 rm -f "$SOCIAL"

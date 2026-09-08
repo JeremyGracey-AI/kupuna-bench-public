@@ -144,7 +144,8 @@ def build_workbench(*, scenarios_dir: Path, results_dir: Path, docs_dir: Path, o
     html = (
         "<title>KŪPUNA-AI Bench Workbench</title>"
         + STYLE
-        + "<h1>KŪPUNA-AI Bench Workbench</h1><p class='meta'>Rendered from the repo. Comment here; "
+        + "<h1>KŪPUNA-AI Bench Workbench</h1>"
+        + "<p class='meta'>\"Let's talk story.\" Rendered from the repo. Comment here; "
         "changes land in the repo.</p>"
         "<nav><a href='#construct'>Construct</a><a href='#rubric'>Rubric</a><a href='#method'>Method</a>"
         "<a href='#scenarios'>Scenarios</a><a href='#results'>Results</a><a href='#decisions'>Decisions</a>"

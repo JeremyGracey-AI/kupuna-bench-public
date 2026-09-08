@@ -1,4 +1,4 @@
-**KŪPUNA-AI Bench**
+**KŪPUNA-AI Bench "Let's talk story."**
 
 - [Home](Home)
 - [Construct](Construct)
