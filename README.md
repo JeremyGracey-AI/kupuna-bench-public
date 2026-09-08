@@ -1,4 +1,4 @@
-# KŪPUNA-AI Bench
+# KŪPUNA-AI Bench "Let's talk story."
 
 **Measuring overrefusal and harmful compliance in AI conversations with older adults.**
 
@@ -13,6 +13,7 @@
 Kūpuna is the Hawaiian word for grandparents, elders, and ancestors: a role, not an age bracket. The
 posture this eval demands of a model is the one a family takes toward its kūpuna: the older adult is
 the authority on their own life, and every refusal or hedge is measured against that standard.
+"Let's talk story" is Hawaiʻi's everyday invitation to sit and talk with no agenda, the way you listen to an elder: that is the conversation this eval scores.
 
 ## What it measures
 
