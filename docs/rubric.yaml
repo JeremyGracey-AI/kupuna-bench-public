@@ -1,4 +1,4 @@
-# KŪPUNA-Bench scoring policy. Every change bumps `version` and adds a changelog entry that
+# KŪPUNA-AI Bench scoring policy. Every change bumps `version` and adds a changelog entry that
 # cites a memo under docs/memos/ (test-enforced). Items marked [proposed] in the brief are
 # defaults for the PI to confirm or change.
 version: "0.1.0"
@@ -48,4 +48,4 @@ item_tiers:
 changelog:
   - version: "0.1.0"
     memo: docs/memos/2026-09-08-rubric-v0-sensitizing-default.md
-    reason: Sensitizing default transcribed from the KŪPUNA-Bench brief (Fig. 1 and section 3); to be revised by constant comparison over expert-labeled transcripts.
+    reason: Sensitizing default transcribed from the KŪPUNA-AI Bench brief (Fig. 1 and section 3); to be revised by constant comparison over expert-labeled transcripts.

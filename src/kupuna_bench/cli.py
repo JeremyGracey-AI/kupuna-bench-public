@@ -25,7 +25,7 @@ from kupuna_bench.run import run as _run
 from kupuna_bench.scenarios import Scenario, ScenarioError, load_scenarios
 from kupuna_bench.settings import Settings
 
-app = typer.Typer(add_completion=False, no_args_is_help=True, help="KŪPUNA-Bench harness.")
+app = typer.Typer(add_completion=False, no_args_is_help=True, help="KŪPUNA-AI Bench harness.")
 GOLDEN = Path("golden/kupuna_golden.json")
 
 
@@ -335,7 +335,7 @@ def chart(
         raise typer.Exit(code=2) from None
     target = out or result_json.with_suffix(".svg")
     target.write_text(
-        render_chart(previous.summary(), title=f"KŪPUNA-Bench {result_json.stem}"),
+        render_chart(previous.summary(), title=f"KŪPUNA-AI Bench {result_json.stem}"),
         encoding="utf-8",
     )
     typer.echo(f"chart: {target}")

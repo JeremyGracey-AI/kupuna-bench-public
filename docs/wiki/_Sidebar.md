@@ -1,4 +1,4 @@
-**KŪPUNA-Bench**
+**KŪPUNA-AI Bench**
 
 - [Home](Home)
 - [Construct](Construct)

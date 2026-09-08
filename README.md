@@ -1,4 +1,4 @@
-# KŪPUNA-Bench
+# KŪPUNA-AI Bench
 
 **Measuring overrefusal and harmful compliance in AI conversations with older adults.**
 

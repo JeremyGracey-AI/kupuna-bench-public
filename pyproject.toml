@@ -1,7 +1,7 @@
 [project]
 name = "kupuna-bench"
 version = "0.1.0"
-description = "KŪPUNA-Bench: measuring overrefusal and harmful compliance in AI conversations with older adults"
+description = "KŪPUNA-AI Bench: measuring overrefusal and harmful compliance in AI conversations with older adults"
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.12"

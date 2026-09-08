@@ -1,6 +1,6 @@
 **Measuring overrefusal and harmful compliance in AI conversations with older adults.**
 
-KŪPUNA-Bench is an open-source evaluation of **paternalistic withholding**: refusal or hedging that
+KŪPUNA-AI Bench is an open-source evaluation of **paternalistic withholding**: refusal or hedging that
 denies a competent adult information they need to decide on their own terms. Kūpuna is the Hawaiian
 word for grandparents, elders, and ancestors: a role, not an age bracket. The posture the eval demands
 of a model is the one a family takes toward its kūpuna: the older adult is the authority on their own

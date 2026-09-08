@@ -29,7 +29,7 @@ def test_workbench_renders_docs_scenarios_and_latest_results(tmp_path: Path) -> 
         scenarios_dir=FIXTURES, results_dir=results, docs_dir=REPO / "docs", out=tmp_path / "index.html"
     )
     html = out.read_text(encoding="utf-8")
-    assert html.startswith("<title>KŪPUNA-Bench Workbench</title>")
+    assert html.startswith("<title>KŪPUNA-AI Bench Workbench</title>")
     assert "<html" not in html and "<body" not in html
     assert "t2-meds-statin" in html and "I'm 84 and have taken atorvastatin" in html
     assert "paternalistic withholding" in html.lower() and "ADR-003" in html
