@@ -77,9 +77,11 @@ def test_build_writes_every_page_and_names_the_commit(tmp_path: Path) -> None:
     assert "abc1234" in footer and "2026-09-08" in footer
     decisions = (tmp_path / "Decisions.md").read_text(encoding="utf-8")
     assert "## ADR-008" in decisions and "(#adr-008-public-mirror-with-a-fresh-history)" in decisions
+    assert "- [ADR-007: scenarios/probe/ is engineering calibration, never reported](#adr-007-" in decisions
     construct = (tmp_path / "Construct.md").read_text(encoding="utf-8")
     assert "working commit `abc1234`" in construct
     for path in written:
         text = path.read_text(encoding="utf-8")
         assert "blob/main/docs/eoi" not in text and "blob/main/PIVOT.md" not in text
         assert "{{" not in text
+        assert "[[`" not in text and "](Construct)](" not in text  # no nested links

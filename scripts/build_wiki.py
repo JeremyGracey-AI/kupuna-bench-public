@@ -122,8 +122,8 @@ def _with_source(text: str, path: str, commit: str) -> str:
 
 def render_doc(root: Path, path: str, commit: str, public: set[str], page_for: dict[str, str]) -> str:
     _require_public(path, public)
-    text = _with_source((root / path).read_text(encoding="utf-8"), path, commit)
-    return link_paths(text, public, page_for).rstrip() + "\n"
+    body = link_paths((root / path).read_text(encoding="utf-8"), public, page_for)
+    return _with_source(body, path, commit).rstrip() + "\n"
 
 
 def render_decisions(root: Path, commit: str, public: set[str], page_for: dict[str, str]) -> str:
@@ -135,12 +135,11 @@ def render_decisions(root: Path, commit: str, public: set[str], page_for: dict[s
         _require_public(rel, public)
         text = file.read_text(encoding="utf-8")
         title = first_heading(text)
-        index.append(f"- [{title}](#{slug(title)})")
+        index.append(f"- [{title.replace('`', '')}](#{slug(title)})")
         demoted = "\n".join(("#" + line) if line.startswith("#") else line for line in text.splitlines())
-        bodies.append(demoted.rstrip() + "\n")
+        bodies.append(link_paths(demoted.rstrip() + "\n", public, page_for))
     head = "# Decision records\n\n" + source_line(DECISIONS_DIR + "/", commit) + "\n" + "\n".join(index)
-    page = head + "\n\n---\n\n" + "\n---\n\n".join(bodies)
-    return link_paths(page, public, page_for)
+    return head + "\n\n---\n\n" + "\n---\n\n".join(bodies)
 
 
 def _write(path: Path, text: str) -> Path:
