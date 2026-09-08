@@ -6,6 +6,7 @@
 [![AI-USE](https://github.com/JeremyGracey-AI/kupuna-bench-public/actions/workflows/ai-use.yml/badge.svg)](https://github.com/JeremyGracey-AI/kupuna-bench-public/actions/workflows/ai-use.yml)
 [![Code: Apache-2.0](https://img.shields.io/badge/code-Apache--2.0-blue.svg)](LICENSE)
 [![Data: CC BY 4.0](https://img.shields.io/badge/data-CC%20BY%204.0-lightgrey.svg)](LICENSE-DATA)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22667583.svg)](https://doi.org/10.5281/zenodo.22667583)
 
 **Read the brief:** [PDF](docs/brief/kupuna-bench-brief.pdf) · [HTML source](docs/brief/kupuna-bench-brief.html) · [Wiki](https://github.com/JeremyGracey-AI/kupuna-bench-public/wiki)
 

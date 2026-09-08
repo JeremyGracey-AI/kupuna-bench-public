@@ -4,6 +4,11 @@ title: "KŪPUNA-AI Bench: Measuring Overrefusal and Harmful Compliance in AI Con
 type: software
 version: 0.1.1
 date-released: 2026-09-08
+doi: 10.5281/zenodo.22667584
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.22667583
+    description: Concept DOI, resolves to the latest version
 license: Apache-2.0
 repository-code: "https://github.com/JeremyGracey-AI/kupuna-bench-public"
 abstract: >-
