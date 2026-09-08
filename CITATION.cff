@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use KŪPUNA-AI Bench, please cite it as below."
 title: "KŪPUNA-AI Bench: Measuring Overrefusal and Harmful Compliance in AI Conversations with Older Adults"
 type: software
-version: 0.1.0
+version: 0.1.1
 date-released: 2026-09-08
 license: Apache-2.0
 repository-code: "https://github.com/JeremyGracey-AI/kupuna-bench-public"
