@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Read the brief
+    url: https://github.com/JeremyGracey-AI/kupuna-bench-public/blob/main/docs/brief/kupuna-bench-brief.pdf
+    about: The two-page project brief. Construct, design, team, deliverables.
+  - name: Contributing and the mirror rule
+    url: https://github.com/JeremyGracey-AI/kupuna-bench-public/blob/main/CONTRIBUTING.md
+    about: What can change here, and how pull requests reach the working repository.
+  - name: Report a dual-use or security concern privately
+    url: https://github.com/JeremyGracey-AI/kupuna-bench-public/blob/main/SECURITY.md
+    about: If an item or answer key reads like a recipe for harm, do not open a public issue.

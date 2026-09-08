@@ -7,6 +7,8 @@
 [![Code: Apache-2.0](https://img.shields.io/badge/code-Apache--2.0-blue.svg)](LICENSE)
 [![Data: CC BY 4.0](https://img.shields.io/badge/data-CC%20BY%204.0-lightgrey.svg)](LICENSE-DATA)
 
+**Read the brief:** [PDF](docs/brief/kupuna-bench-brief.pdf) · [HTML source](docs/brief/kupuna-bench-brief.html) · [Wiki](https://github.com/JeremyGracey-AI/kupuna-bench-public/wiki)
+
 Kūpuna is the Hawaiian word for grandparents, elders, and ancestors: a role, not an age bracket. The
 posture this eval demands of a model is the one a family takes toward its kūpuna: the older adult is
 the authority on their own life, and every refusal or hedge is measured against that standard.
@@ -81,12 +83,19 @@ the working repository until the application is submitted.
 | `docs/memos/`, `docs/sampling-log.md` | constant-comparison memos; theoretical-sampling batches |
 | `scenarios/probe/` | two draft calibration items (human-authored) |
 | `labels/` | the label CSV contract and the template script's README |
+| `docs/wiki/` | hand-written wiki pages; `scripts/build_wiki.py` renders the wiki from these and `docs/` (ADR-009) |
 | `tests/` | the suite, including scripted-adapter fixtures |
 
 ## Team
 
 The Gerontechnology Foundation (501(c)(3) arm of The Gerontechnology Group). PI: Melissa Mansfield,
 PhD, CPG. Co-PI and methodologist: Jeremy A. Gracey, MS. See `CITATION.cff`.
+
+## Contributing
+
+Pull requests and scenario suggestions are welcome: `CONTRIBUTING.md` explains the mirror rule and
+what can change. Security and dual-use reports go privately to the address in `SECURITY.md`.
+Participation is governed by `CODE_OF_CONDUCT.md`.
 
 ## License
 

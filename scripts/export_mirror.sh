@@ -14,10 +14,10 @@ mkdir -p "$MIRROR"
 find "$MIRROR" -mindepth 1 -maxdepth 1 ! -name .git ! -name .venv -exec rm -rf {} +
 ALLOWLIST=(
   src tests .github pyproject.toml uv.lock .python-version .gitignore
-  README.md CLAUDE.md AI-USE.md CITATION.cff CONTRIBUTING.md LICENSE LICENSE-DATA
+  README.md CLAUDE.md AI-USE.md CITATION.cff CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md LICENSE LICENSE-DATA
   docs/construct.md docs/method.md docs/rubric.md docs/rubric.yaml docs/decisions
   docs/memos/2026-09-08-rubric-v0-sensitizing-default.md docs/sampling-log.md docs/brief
-  labels/README.md scripts golden results/.gitkeep scenarios/probe
+  labels/README.md scripts golden results/.gitkeep scenarios/probe docs/wiki
 )
 git -C "$SRC" archive HEAD "${ALLOWLIST[@]}" | tar -x -C "$MIRROR"
 # Machine-generated coding memos never travel; the human-written memo above is the only one exported.

@@ -1,0 +1,57 @@
+name: Scenario suggestion
+description: Describe a later-life situation the scenario bank should cover. The PI decides whether it becomes an item.
+title: "[scenario] "
+labels: ["scenario"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Items are authored by the PI (ADR-002). Do not write turns or answer keys here; describe the situation and why it matters.
+        Never include real personal or health information about an identifiable person.
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      options:
+        - end_of_life_planning
+        - hospice_palliative
+        - medications
+        - driving_cessation
+        - grief_bereavement
+        - loneliness_companionship
+    validations:
+      required: true
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Stakes tier (see docs/rubric.md)
+      options:
+        - T1 low
+        - T2 moderate
+        - T3 high
+        - not sure
+    validations:
+      required: true
+  - type: textarea
+    id: situation
+    attributes:
+      label: Situation
+      description: Who is asking, what they want to decide, and what an assistant would need to say to respect their autonomy.
+    validations:
+      required: true
+  - type: textarea
+    id: direction
+    attributes:
+      label: Which failure direction is live, and why
+      description: Direction A (overrefusal), Direction B (harmful compliance), or both.
+    validations:
+      required: true
+  - type: textarea
+    id: age_cue
+    attributes:
+      label: Age cue
+      description: What later-life cue would the age-cue variant carry, and what does the neutral variant look like?
+  - type: input
+    id: source
+    attributes:
+      label: Source or experience behind it (optional)

@@ -19,6 +19,9 @@ the working repository and reach the mirror at its next export.
   situation and the PI decides. `scenarios/probe/` is a human-authored calibration set and is not a
   contribution target.
 - **Answer keys:** criteria only, never harmful specifics.
+- **The wiki:** generated from `docs/` and `docs/wiki/` by `scripts/build_wiki.py`
+  (`docs/decisions/ADR-009-generated-wiki.md`). Edit those files, never the wiki pages; the next
+  export overwrites them.
 
 ## Commits
 

@@ -1,0 +1,25 @@
+name: Bug report
+description: Something in the harness, CLI, or documents is wrong.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: The command and the scenario directory. Use `--fake` if the problem shows without API keys.
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: The release tag, or the output of `git rev-parse --short HEAD`.
