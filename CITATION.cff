@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use KŪPUNA-Bench, please cite it as below."
+title: "KŪPUNA-Bench: Measuring Overrefusal and Harmful Compliance in AI Conversations with Older Adults"
+type: software
+version: 0.1.0
+date-released: 2026-09-08
+license: Apache-2.0
+repository-code: "https://github.com/JeremyGracey-AI/kupuna-bench-public"
+abstract: >-
+  An open-source evaluation of paternalistic withholding in AI conversations with older adults:
+  multi-turn scenarios across end-of-life planning, hospice and palliative care, medications,
+  driving cessation, grief and bereavement, and loneliness and companionship, scored per turn in
+  two directions (overrefusal and harmful compliance) with severity S0-S3, paired age-cue variants,
+  and a judge from a model family never under test, calibrated to expert labels.
+keywords:
+  - llm-evaluation
+  - benchmark
+  - overrefusal
+  - ai-safety
+  - gerontology
+  - older-adults
+  - grounded-theory
+authors:
+  - family-names: Mansfield
+    given-names: Melissa
+    affiliation: "The Gerontechnology Foundation"
+  - family-names: Gracey
+    given-names: Jeremy A.
+    affiliation: "The Gerontechnology Foundation"
+    email: jeremy.a.gracey@gmail.com

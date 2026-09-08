@@ -1,7 +1,7 @@
 # CLAUDE.md — kupuna-bench
 
-This is the public mirror of a private working repository (ADR-008). Read `docs/decisions/` and
-`docs/method.md` before major work.
+Read `docs/superpowers/plans/2026-09-07-kupuna-bench-build.md` and `HANDOFF.md` before major work.
+The approved design is `~/.claude/plans/linear-napping-phoenix.md`.
 
 ## Stack (non-negotiable)
 - Python 3.12, `uv` only (`uv add`, `uv run`), ruff, pyright strict on `src/`, pytest.

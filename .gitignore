@@ -10,3 +10,4 @@ results/*.svg
 .env
 .superpowers/
 workbench/
+.DS_Store
