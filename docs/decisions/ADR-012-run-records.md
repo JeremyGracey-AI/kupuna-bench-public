@@ -1,7 +1,8 @@
 # ADR-012: A run claims its id first, writes its manifest before the first call, and journals every cell
 
 ## Context
-The external review of the mirror at 5993ca2 found two record defects. Finding 6: `run` chose the
+The external review of the mirror at 5993ca2 (held privately as docs/reviews/2026-09-09-review-5993ca2.md)
+found two record defects. Finding 6: `run` chose the
 next record name by scanning Markdown files, overwrote the JSON sidecar, and only then created the
 Markdown exclusively, so two writers could produce a JSON from one run beside a record from another,
 and an orphan JSON from an interrupted write was silently replaced. Finding 5: the result kept

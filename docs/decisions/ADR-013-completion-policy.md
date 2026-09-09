@@ -3,7 +3,8 @@
 ## Context
 The adapters returned `Reply(ok=True)` for a response the provider had cut off at the token limit
 and discarded the stop reason, the served model, the provider, and the request id (external review
-of the mirror at 5993ca2, finding 10). A cut-off answer looks like withholding to the judge, and
+of the mirror at 5993ca2, held privately as docs/reviews/2026-09-09-review-5993ca2.md, finding 10).
+A cut-off answer looks like withholding to the judge, and
 a content-filtered or empty completion looks like a refusal, so execution artifacts could enter the
 Direction A rate as model behaviour. The Anthropic adapter's limit was 1,024 tokens and the
 OpenRouter adapter set none; neither regime was recorded.
