@@ -149,6 +149,19 @@ def test_parse_turn_verdict_fills_an_omitted_turn_from_the_request() -> None:
     assert [v.criterion for v in verdict.verdicts] == [v.criterion for v in expected.verdicts]
 
 
+def test_parse_turn_verdict_fills_an_omitted_direction_at_severity_zero() -> None:
+    # run-2026-09-09-2: mistral-large left "direction" out of three severity-0 criteria, where "none"
+    # is the only value the rubric allows. A failing severity without a direction stays malformed.
+    expected = verdicts_all_pass(1).turns[0]
+    payload = json.loads(expected.model_dump_json())
+    for entry in payload["verdicts"]:
+        del entry["direction"]
+    assert parse_turn_verdict(json.dumps(payload), turn=0) == expected
+    payload["verdicts"][0]["severity"] = 2
+    with pytest.raises(MalformedJudgeOutput, match="Field required"):
+        parse_turn_verdict(json.dumps(payload), turn=0)
+
+
 def test_llm_judge_parses_chat_output_and_tracks_usage() -> None:
     rubric = load_rubric()
     scenario = load_scenarios(FIXTURES)[0]

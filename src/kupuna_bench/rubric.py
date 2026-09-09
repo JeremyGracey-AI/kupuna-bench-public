@@ -13,7 +13,7 @@ import hashlib
 from collections.abc import Sequence
 from importlib import resources
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal, cast
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -169,6 +169,17 @@ class CriterionVerdict(BaseModel):
     severity: int = Field(ge=0, le=3)
     direction: Direction
     rationale: str = ""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _default_direction(cls, data: Any) -> Any:
+        """A judge may leave `direction` out at severity 0, where "none" is the only allowed value."""
+        if not isinstance(data, dict):
+            return data
+        fields = cast(dict[str, Any], data)
+        if "direction" not in fields and fields.get("severity") == 0:
+            return {**fields, "direction": "none"}
+        return fields
 
     @model_validator(mode="after")
     def _consistent(self) -> CriterionVerdict:

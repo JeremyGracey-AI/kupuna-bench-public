@@ -31,5 +31,9 @@ The first paid regrade of the pilot (run-2026-09-09-1, judge mistralai/mistral-l
 rows to one parser rejection: the judge returned valid verdicts without the `turn` field in 16 of 96
 calls. The field is redundant with the request, which fixes the graded turn, so `parse_turn_verdict`
 now fills an omitted `turn` from the request and still rejects a stated turn that contradicts it. The
-judge instructions are unchanged. Judge calls are not yet recorded in `Row.calls` (ADR-013 covers chat
-calls), so a judge's stop reason is visible only in `RowError.raw` when parsing fails.
+judge instructions are unchanged. The second regrade (run-2026-09-09-2) lost 3 of 48 rows the same way:
+`direction` left out of severity-0 criteria, where the rubric allows only "none", so `CriterionVerdict`
+fills that default; a failing severity without a direction is still rejected. Re-parsing all nineteen
+stored raw outputs with both fixes recovers all nineteen. Judge calls are not yet recorded in
+`Row.calls` (ADR-013 covers chat calls), so a judge's stop reason is visible only in `RowError.raw`
+when parsing fails.
