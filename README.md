@@ -69,8 +69,9 @@ bank and gold labels are being authored by the PI; judge calibration follows the
 `scenarios/probe/` holds two human-authored, draft calibration items written by the co-PI (see
 `docs/decisions/ADR-007-probe-set.md`); they are never promoted or reported.
 
-This repository is the public mirror of a private working repository
-(`docs/decisions/ADR-008-public-mirror.md`). The grant application drafts and pilot records stay in
+The public repository, JeremyGracey-AI/kupuna-bench-public, is a mirror of a private working
+repository, exported by an explicit allowlist (`docs/decisions/ADR-008-public-mirror.md`). The
+working repository is the source of truth. The grant application drafts and pilot records stay in
 the working repository until the application is submitted.
 
 ## Repository map

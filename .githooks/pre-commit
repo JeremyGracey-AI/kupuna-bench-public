@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Pre-commit hook: the commit's own content (the index, exported to a temporary tree) must pass scripts/gate.sh.
+# Install once per clone:  git config core.hooksPath .githooks
+# Unstaged edits are not gated because they are not in the commit. Escape hatch: git commit --no-verify, and say why.
+set -euo pipefail
+TREE="$(mktemp -d)"
+trap 'rm -rf "$TREE"' EXIT
+git checkout-index -a --prefix="$TREE/"
+"$TREE/scripts/gate.sh"

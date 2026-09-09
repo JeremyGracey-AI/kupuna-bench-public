@@ -24,3 +24,8 @@ there, closing ADR-001.
 Reviewers can read the harness and the method without seeing the application. Nothing from the
 working repository's history reaches the mirror; its history starts at the export commit, which
 names the working-repository commit it came from.
+
+## Amendment, 2026-09-08
+The allowlist grows by `.githooks/`, the tracked pre-commit hook that runs `scripts/gate.sh` (the CI
+workflow's steps, one per line, exiting on the first failure), so a clone of either repository installs
+the same gate with `git config core.hooksPath .githooks`.

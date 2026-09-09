@@ -24,4 +24,5 @@ The approved design is `~/.claude/plans/linear-napping-phoenix.md`.
 - Commits: `[worker]` for agent-produced, `[evaluator]` for handoff/state updates written after a
   verdict, `[human]` for Jeremy's. No AI co-author trailers.
 - Never enter anything into the grant application form.
-- Before claiming done: `uv run ruff check . && uv run pyright && uv run pytest -q`.
+- Before claiming done: `scripts/gate.sh` (the CI steps, one per line, exiting on the first failure).
+  `.githooks/pre-commit` runs it on every commit after `git config core.hooksPath .githooks`.

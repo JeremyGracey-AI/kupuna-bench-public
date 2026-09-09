@@ -15,7 +15,9 @@ uv run kupuna-bench run --fake --scenarios tests/fixtures/scenarios --allow-draf
 
 `--fake` swaps scripted adapters into both seams (`Chat` and `Judge`), so the whole pipeline runs and
 writes a run record with no network. CI runs this plumbing gate on every push, keyless. The gate before
-any claim of done: `uv run ruff check . && uv run pyright && uv run pytest -q`.
+any claim of done is `scripts/gate.sh`: the same four CI steps (lint, types, tests, plumbing run), one
+per line, exiting on the first failure. `git config core.hooksPath .githooks` once per clone runs it
+as a pre-commit hook.
 
 ## Configure live models
 

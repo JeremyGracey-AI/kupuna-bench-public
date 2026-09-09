@@ -21,7 +21,7 @@ jobs:
       - name: Types
         run: uv run pyright
       - name: Tests
-        run: uv run pytest -q
+        run: uv run pytest
       # No API keys exist in CI. The fake adapters must satisfy PLUMBING_GATE
       # (every cell present, every row graded). Exit code 1 fails the build.
       - name: Plumbing gate
