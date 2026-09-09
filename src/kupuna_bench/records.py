@@ -1,21 +1,26 @@
-"""Append-only run records: results/run-YYYY-MM-DD-N.md.
+"""Append-only run records: results/run-YYYY-MM-DD-N.md, its JSON sidecar, and its run directory.
 
-Lifted from harness-eval's records module. Exclusive-create only; N is monotonic within a day
-and gaps are never refilled; a FAIL must name its shortfalls; a run against an unpromoted
-golden carries `draft: true` in the record itself.
+Lifted from harness-eval's records module. A run id is claimed by creating `results/run-<id>/`
+exclusively before any artifact is written (ADR-012), so two writers can never share a name and
+an orphan JSON from an interrupted write is never overwritten (review finding 6). N is monotonic
+within a day over records, sidecars, and directories, and gaps are never refilled; a FAIL must name
+its shortfalls; a run against an unpromoted golden carries `draft: true` in the record itself.
 """
 
 from __future__ import annotations
 
+import os
 import re
 from datetime import date
 from pathlib import Path
 from typing import Any, cast
 
+from pydantic import BaseModel, ConfigDict
+
 from kupuna_bench.run import RunResult
 
 RECORD_VERSION = 1
-_RUN_RE = re.compile(r"^run-(\d{4}-\d{2}-\d{2})-(\d+)\.md$")
+_RUN_RE = re.compile(r"^run-(\d{4}-\d{2}-\d{2})-(\d+)(?:\.md|\.json)?$")
 _REQUIRED = (
     "system", "dataset_sha256", "rubric_version", "models", "judge", "runs",
     "gate", "verdict", "timestamp", "driver", "metrics",
@@ -41,6 +46,9 @@ def facts_from_result(
     timestamp: str,
     driver: str,
     draft: bool,
+    run_id: str | None = None,
+    code_sha: str | None = None,
+    manifest: str | None = None,
 ) -> dict[str, Any]:
     summary = result.summary()
     metrics: dict[str, Any] = {
@@ -56,7 +64,20 @@ def facts_from_result(
         prefix = f"{cell.model}/{cell.tier}/{cell.variant}"
         metrics[f"{prefix}/rate_a"] = cell.rate_a if cell.rate_a is not None else "n/a"
         metrics[f"{prefix}/rate_b"] = cell.rate_b if cell.rate_b is not None else "n/a"
+    for delta in summary.age_cue_delta:
+        prefix = f"{delta.model}/{delta.tier}"
+        metrics[f"{prefix}/pairs_complete"] = f"{delta.pairs_complete}/{delta.pairs_total}"
+        metrics[f"{prefix}/delta_a_paired"] = delta.delta_a if delta.delta_a is not None else "n/a"
+        metrics[f"{prefix}/delta_b_paired"] = delta.delta_b if delta.delta_b is not None else "n/a"
+    lineage = {k: v for k, v in (("run_id", run_id), ("code_sha", code_sha), ("manifest", manifest)) if v}
+    notes: list[str] = [summary.table()]
+    if result.fixture_scenarios:
+        notes.append(
+            f"{result.fixture_scenarios} fixture scenario(s) (reviewed_by: fixture) are test data and are "
+            "never reported; this record is draft for that reason alone."
+        )
     return {
+        **lineage,
         "system": "kupuna-bench",
         "dataset_sha256": result.dataset_sha256,
         "rubric_version": result.rubric_version,
@@ -68,22 +89,62 @@ def facts_from_result(
         "shortfalls": list(shortfalls),
         "timestamp": timestamp,
         "driver": driver,
-        "draft": draft or result.allow_draft,
+        "draft": draft or result.allow_draft or result.fixture_scenarios > 0,
         "metrics": metrics,
-        "notes": [summary.table()],
+        "notes": notes,
     }
 
 
-def next_record_path(records_dir: Path, day: date | None = None) -> Path:
-    day = day or date.today()
-    stamp = day.isoformat()
+def _highest(records_dir: Path, stamp: str) -> int:
+    """The highest N used today by a record, a JSON sidecar, or a run directory."""
     highest = 0
     if records_dir.is_dir():
         for entry in records_dir.iterdir():
             match = _RUN_RE.match(entry.name)
             if match and match.group(1) == stamp:
                 highest = max(highest, int(match.group(2)))
-    return records_dir / f"run-{stamp}-{highest + 1}.md"
+    return highest
+
+
+def next_record_path(records_dir: Path, day: date | None = None) -> Path:
+    stamp = (day or date.today()).isoformat()
+    return records_dir / f"run-{stamp}-{_highest(records_dir, stamp) + 1}.md"
+
+
+class RunPaths(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    run_id: str
+    dir: Path
+    record: Path
+    json_path: Path
+
+
+def allocate_run(records_dir: Path, day: date | None = None) -> RunPaths:
+    """Claim the next run id by creating its directory exclusively; N is monotonic and never refilled."""
+    records_dir = Path(records_dir)
+    records_dir.mkdir(parents=True, exist_ok=True)
+    stamp = (day or date.today()).isoformat()
+    for _ in range(1000):
+        run_id = f"run-{stamp}-{_highest(records_dir, stamp) + 1}"
+        try:
+            (records_dir / run_id).mkdir(exist_ok=False)
+        except FileExistsError:
+            continue
+        return RunPaths(
+            run_id=run_id,
+            dir=records_dir / run_id,
+            record=records_dir / f"{run_id}.md",
+            json_path=records_dir / f"{run_id}.json",
+        )
+    raise RuntimeError(f"could not allocate a run id in {records_dir} after 1000 attempts")
+
+
+def write_json_atomic(path: Path, text: str) -> None:
+    """Write to a sibling temp file and rename, so a reader never sees a half-written JSON."""
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, path)
 
 
 def _table(metrics: dict[str, Any]) -> str:
@@ -100,6 +161,9 @@ def render_record(facts: dict[str, Any], record_name: str) -> str:
         "---",
         f"record: {record_name}",
         f"record_version: {facts.get('record_version', RECORD_VERSION)}",
+    ]
+    front += [f"{key}: {facts[key]}" for key in ("run_id", "code_sha", "manifest") if facts.get(key)]
+    front += [
         f"system: {facts['system']}",
         f"dataset_sha256: {facts['dataset_sha256']}",
         f"rubric_version: {facts['rubric_version']}",

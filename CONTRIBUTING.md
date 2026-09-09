@@ -15,7 +15,10 @@ the mirror at its next export.
   is the CI workflow's four steps (lint, types, tests, keyless plumbing run), one per line, and exits
   on the first failure. `git config core.hooksPath .githooks` once per clone runs it on every commit.
 - **The rubric:** `docs/rubric.yaml` changes only with a version bump and a changelog entry that
-  cites a human-written memo under `docs/memos/`; a test enforces it.
+  cites a human-written memo under `docs/memos/`; a test enforces it. The package ships a
+  byte-identical copy at `src/kupuna_bench/rubric.yaml` so an installed wheel works; a test fails
+  until both match, so copy the policy file over after every change. `--rubric PATH` selects
+  another file for one run.
 - **Scenarios:** items in the scenario bank are authored by the PI and promoted by name
   (`status: promoted`, `reviewed_by`). Do not submit scenario items; submit an issue describing the
   situation and the PI decides. `scenarios/probe/` is a human-authored calibration set and is not a

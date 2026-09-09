@@ -1,8 +1,9 @@
 """The Judge seam: grades a transcript into per-turn verdicts on the rubric criteria.
 
-Two adapters: LLMJudge (a Chat plus the rubric, JSON output parsed strictly) and
-ScriptedJudge (deterministic, for tests and keyless CI). Malformed model output is rejected
-at this seam with MalformedJudgeOutput rather than silently repaired (Provenance's door).
+Two adapters: LLMJudge (a Chat plus the rubric; one call per reply, each seeing only the
+conversation up to that reply and that turn's answer key, ADR-010) and ScriptedJudge
+(deterministic, for tests and keyless CI). Malformed model output is rejected at this seam with
+MalformedJudgeOutput, which keeps the raw text, rather than silently repaired (Provenance's door).
 """
 
 from __future__ import annotations
@@ -15,7 +16,14 @@ from typing import Any, Protocol, cast, runtime_checkable
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 from kupuna_bench.chat import Chat, Message, Usage
-from kupuna_bench.rubric import CRITERIA, CriterionVerdict, Rubric, TurnVerdict, Verdicts
+from kupuna_bench.rubric import (
+    CRITERIA,
+    CriterionVerdict,
+    ForbiddenDirection,
+    Rubric,
+    TurnVerdict,
+    Verdicts,
+)
 from kupuna_bench.scenarios import Scenario, Variant
 
 
@@ -42,15 +50,20 @@ class JudgeError(RuntimeError):
 
 
 class MalformedJudgeOutput(JudgeError):
-    def __init__(self, reason: str) -> None:
+    """`raw` is the rejected text and `turn` the reply being graded, both kept for the row's audit trail."""
+
+    def __init__(self, reason: str, *, raw: str | None = None, turn: int | None = None) -> None:
         super().__init__(f"judge output rejected: {reason}")
         self.reason = reason
+        self.raw = raw
+        self.turn = turn
 
 
 class JudgeCallFailed(JudgeError):
-    def __init__(self, reason: str) -> None:
+    def __init__(self, reason: str, *, turn: int | None = None) -> None:
         super().__init__(f"judge call failed: {reason}")
         self.reason = reason
+        self.turn = turn
 
 
 @runtime_checkable
@@ -87,7 +100,7 @@ def first_json_object(text: str) -> dict[str, Any]:
     return cast(dict[str, Any], parsed)
 
 
-def parse_verdicts(text: str, *, n_turns: int) -> Verdicts:
+def parse_verdicts(text: str, *, n_turns: int, rubric: Rubric | None = None) -> Verdicts:
     payload = first_json_object(text)
     try:
         verdicts = Verdicts.model_validate(payload)
@@ -95,38 +108,60 @@ def parse_verdicts(text: str, *, n_turns: int) -> Verdicts:
         raise MalformedJudgeOutput(f"schema: {exc.errors()[0]['msg']}") from None
     if len(verdicts.turns) != n_turns:
         raise MalformedJudgeOutput(f"expected {n_turns} turns, got {len(verdicts.turns)}")
+    if rubric is not None:
+        try:
+            rubric.check_directions(verdicts)
+        except ForbiddenDirection as exc:
+            raise MalformedJudgeOutput(str(exc)) from None
     return verdicts
 
 
-def build_judge_messages(scenario: Scenario, transcript: Transcript, rubric: Rubric) -> list[Message]:
-    turns_payload: list[dict[str, Any]] = []
-    for index, exchange in enumerate(transcript.exchanges):
-        key = scenario.key_for(index)
-        turns_payload.append(
-            {
-                "turn": index,
-                "user": exchange.user,
-                "assistant": exchange.assistant,
-                "answer_key": key.model_dump(mode="json"),
-            }
-        )
-    user_payload = {
+def build_turn_messages(
+    scenario: Scenario, transcript: Transcript, rubric: Rubric, *, turn: int
+) -> list[Message]:
+    """The judge sees the conversation up to and including the reply it grades, that turn's key, and
+    the item's domain and tier. Not the variant, persona, situation, risk cues, or any later turn
+    (ADR-010): a fact the person has not yet disclosed cannot be expected, and the experimental
+    condition cannot steer the grade."""
+    if not 0 <= turn < transcript.turns:
+        raise ValueError(f"turn {turn} is not in the transcript (0..{transcript.turns - 1})")
+    conversation = [
+        {"turn": index, "user": exchange.user, "assistant": exchange.assistant}
+        for index, exchange in enumerate(transcript.exchanges[: turn + 1])
+    ]
+    user_payload: dict[str, Any] = {
         "scenario": {
             "id": scenario.id,
             "domain": scenario.domain,
             "tier": scenario.tier,
             "tier_definition": rubric.item_tiers.get(scenario.tier, ""),
-            "situation": scenario.situation,
-            "risk_cues": list(scenario.risk_cues),
-            "variant": transcript.variant,
-            "persona": scenario.persona.model_dump(mode="json") if scenario.persona else None,
         },
-        "turns": turns_payload,
+        "conversation": conversation,
+        "grade_turn": turn,
+        "answer_key": scenario.key_for(turn).model_dump(mode="json"),
     }
     return [
         {"role": "system", "content": rubric.judge_instructions()},
         {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False, indent=1)},
     ]
+
+
+def parse_turn_verdict(text: str, *, turn: int, rubric: Rubric | None = None) -> TurnVerdict:
+    """One reply's verdicts; every rejection keeps the raw text and the turn."""
+    try:
+        verdict = TurnVerdict.model_validate(first_json_object(text))
+    except MalformedJudgeOutput as exc:
+        raise MalformedJudgeOutput(exc.reason, raw=text, turn=turn) from None
+    except ValidationError as exc:
+        raise MalformedJudgeOutput(f"schema: {exc.errors()[0]['msg']}", raw=text, turn=turn) from None
+    if verdict.turn != turn:
+        raise MalformedJudgeOutput(f"expected turn {turn}, got {verdict.turn}", raw=text, turn=turn)
+    if rubric is not None:
+        try:
+            rubric.check_turn_directions(verdict)
+        except ForbiddenDirection as exc:
+            raise MalformedJudgeOutput(str(exc), raw=text, turn=turn) from None
+    return verdict
 
 
 SeverityHook = Callable[[Scenario, Transcript, int, str], tuple[int, str]]
@@ -142,15 +177,19 @@ class ScriptedJudge:
         *,
         severity: SeverityHook | None = None,
         malformed_for: frozenset[str] = frozenset(),
+        malformed_when: Callable[[Scenario, Transcript], bool] | None = None,
     ) -> None:
         self.name = name
         self.family = family
         self._severity = severity
         self._malformed_for = malformed_for
+        self._malformed_when = malformed_when
         self.usage = Usage(cost_usd=0.0)
 
     def grade(self, scenario: Scenario, transcript: Transcript) -> Verdicts:
         if scenario.id in self._malformed_for:
+            raise MalformedJudgeOutput("scripted malformed output")
+        if self._malformed_when is not None and self._malformed_when(scenario, transcript):
             raise MalformedJudgeOutput("scripted malformed output")
         if self._severity is None:
             return verdicts_all_pass(transcript.turns)
@@ -170,6 +209,7 @@ class LLMJudge:
     """A Chat plus the rubric. `usage` accumulates judge spend across calls (thread-safe)."""
 
     def __init__(self, chat: Chat, rubric: Rubric) -> None:
+        self.chat = chat
         self._chat = chat
         self._rubric = rubric
         self.name = f"llm:{chat.name}"
@@ -178,10 +218,16 @@ class LLMJudge:
         self._lock = threading.Lock()
 
     def grade(self, scenario: Scenario, transcript: Transcript) -> Verdicts:
-        messages: Sequence[Message] = build_judge_messages(scenario, transcript, self._rubric)
-        reply = self._chat.complete(messages, json_mode=True)
-        with self._lock:
-            self.usage = self.usage + reply.usage
-        if not reply.ok:
-            raise JudgeCallFailed(reply.error or "unknown error")
-        return parse_verdicts(reply.text, n_turns=transcript.turns)
+        """One call per reply with the conversation prefix only; any failed turn fails the transcript."""
+        turns: list[TurnVerdict] = []
+        for turn in range(transcript.turns):
+            messages: Sequence[Message] = build_turn_messages(scenario, transcript, self._rubric, turn=turn)
+            reply = self._chat.complete(messages, json_mode=True)
+            with self._lock:
+                self.usage = self.usage + reply.usage
+            if not reply.ok:
+                raise JudgeCallFailed(reply.error or "unknown error", turn=turn)
+            if reply.finish_reason == "length":
+                raise MalformedJudgeOutput("truncated judge output", raw=reply.text, turn=turn)
+            turns.append(parse_turn_verdict(reply.text, turn=turn, rubric=self._rubric))
+        return Verdicts(turns=tuple(turns))

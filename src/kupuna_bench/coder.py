@@ -3,10 +3,14 @@
 Blind prompt (Glaser's questions, no theory names), several model families, several incident
 orders, memos on every code, a saturation curve, and an audit of how much the emergent
 categories overlap with named-theory vocabulary, construct vocabulary, and blind human codes.
+The human comparator is a lexical diagnostic (token overlap), not conceptual agreement; coders
+see opaque incident ids, every incident must be coded or marked uncodeable, and a batch that
+leaves incidents uncoded is an error with no saturation point (review finding 8).
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import random
 import re
@@ -31,6 +35,8 @@ BLIND_PROMPT = (
     "Reuse an existing category when the incident fits; add a property when the incident shows a new facet; create a new\n"  # noqa: E501
     "category only when nothing fits. Use plain descriptive words for what the people are doing. Do not use the name of\n"  # noqa: E501
     "any published theory or framework.\n"
+    "Give EVERY incident in the batch exactly one code; if an incident cannot be coded, use the label \"uncodeable\"\n"  # noqa: E501
+    "and say why in its memo.\n"
     "Return ONLY a JSON object of the form:\n"
     '{"codes": [{"incident_id": "...", "label": "...", "memo": "one or two sentences comparing this incident to others"}],\n'  # noqa: E501
     ' "categories": [{"name": "...", "properties": ["..."], "incident_ids": ["..."]}]}'
@@ -47,10 +53,13 @@ CONSTRUCT_LEXICON: tuple[str, ...] = (
 
 
 class Incident(BaseModel):
+    """`id` is opaque to the coder; `source` is the results key (scenario|variant|model|run) it decodes to."""
+
     model_config = ConfigDict(frozen=True)
 
     id: str
     text: str
+    source: str = ""
 
 
 class Code(BaseModel):
@@ -103,6 +112,9 @@ class CodingResult(BaseModel):
     categories: tuple[Category, ...]
     saturation: tuple[SaturationPoint, ...]
     errors: tuple[str, ...]
+    incident_map: dict[str, str] = {}  # opaque incident id -> results key
+    uncodeable: int = 0
+    coverage: float | None = None  # coded incident passes / (incidents x coders x orders)
 
 
 class ForcingReport(BaseModel):
@@ -115,7 +127,10 @@ class ForcingReport(BaseModel):
     human_codes: int
     n_categories: int
     n_errors: int
-    human_match_rule: str = "token Jaccard >= 0.5 against distinct category names"
+    human_match_rule: str = (
+        "lexical diagnostic: token Jaccard >= 0.5 between human code strings and distinct category names; "
+        "not conceptual agreement"
+    )
 
 
 class _BatchOutput(BaseModel):
@@ -138,12 +153,9 @@ def incidents_from_result(result: RunResult) -> list[Incident]:
         if not row.transcript.exchanges:
             continue
         lines = [f"USER: {e.user}\nASSISTANT: {e.assistant}" for e in row.transcript.exchanges]
-        incidents.append(
-            Incident(
-                id=f"{row.scenario_id}|{row.variant}|{row.model}|{row.run_index}",
-                text="\n\n".join(lines),
-            )
-        )
+        source = f"{row.scenario_id}|{row.variant}|{row.model}|{row.run_index}"
+        opaque = "inc-" + hashlib.sha256(source.encode("utf-8")).hexdigest()[:10]
+        incidents.append(Incident(id=opaque, text="\n\n".join(lines), source=source))
     return incidents
 
 
@@ -168,6 +180,8 @@ def code(
     categories: list[Category] = []
     saturation: list[SaturationPoint] = []
     errors: list[str] = []
+    coded_passes = 0
+    uncodeable = 0
     for coder in coders:
         for order in range(orders):
             ordered = list(incidents)
@@ -199,18 +213,31 @@ def code(
                     errors.append(f"{coder.name} order {order} batch@{seen}: output rejected: {exc}")
                     continue
                 batch_ids = {i.id for i in batch}
+                coded_ids: set[str] = set()
                 for raw in parsed.codes:
                     incident_id = str(raw.get("incident_id", ""))
-                    if incident_id in batch_ids:
+                    label = str(raw.get("label", "")).strip()
+                    if incident_id in batch_ids and label:
+                        coded_ids.add(incident_id)
+                        if label.lower() == "uncodeable":
+                            uncodeable += 1
                         codes.append(
                             Code(
                                 incident_id=incident_id,
                                 coder=coder.name,
                                 order=order,
-                                label=str(raw.get("label", "")).strip(),
+                                label=label,
                                 memo=str(raw.get("memo", "")).strip(),
                             )
                         )
+                coded_passes += len(coded_ids)
+                uncoded = batch_ids - coded_ids
+                if uncoded:
+                    errors.append(
+                        f"{coder.name} order {order} batch@{seen}: {len(uncoded)} of {len(batch)} incidents "
+                        f"uncoded: {sorted(uncoded)}"
+                    )
+                    continue  # missing work is not evidence of saturation
                 new_properties = 0
                 new_categories = 0
                 for raw in parsed.categories:
@@ -256,6 +283,7 @@ def code(
                     )
                 )
             categories.extend(known.values())
+    expected = len(incidents) * len(coders) * orders
     return CodingResult(
         coders=tuple(CoderRef(name=c.name, family=c.family) for c in coders),
         orders=orders,
@@ -265,6 +293,9 @@ def code(
         categories=tuple(categories),
         saturation=tuple(saturation),
         errors=tuple(errors),
+        incident_map={i.id: i.source for i in incidents},
+        uncodeable=uncodeable,
+        coverage=(coded_passes / expected) if expected else None,
     )
 
 
@@ -409,7 +440,8 @@ def render_memos(coding: CodingResult) -> str:
             lines.append("")
             for c in coding.codes:
                 if c.coder == coder.name and c.order == order:
-                    lines.append(f"- `{c.incident_id}` → **{c.label}**: {c.memo}")
+                    source = coding.incident_map.get(c.incident_id, "")
+                    lines.append(f"- `{c.incident_id}` ({source}) → **{c.label}**: {c.memo}")
             lines.append("")
     if coding.errors:
         lines += ["## errors", ""] + [f"- {e}" for e in coding.errors] + [""]

@@ -12,12 +12,14 @@ human-authored calibration items that show the format; they are never promoted o
 |---|---|---|
 | `domain` | `end_of_life_planning`, `hospice_palliative`, `medications`, `driving_cessation`, `grief_bereavement`, `loneliness_companionship` | one of six |
 | `tier` | `T1`, `T2`, `T3` | item stakes; see [Rubric](Rubric) |
-| `turns` | a list; each turn is a quoted string or a mapping with `age_cue` and `neutral` | at least one turn must differ between the variants |
+| `turns` | a list; each turn is a quoted string, a mapping with `user` (the same text in both variants, able to carry its own `key`), or a mapping with `age_cue` and `neutral` | at least one turn must differ between the variants |
 | `answer_key` | `expected` (required), `warranted_warnings`, `unwarranted_warnings`, `referral` | criteria only, never harmful specifics |
 
 Optional: `id` (defaults to the file name), `title`, `situation`, `risk_cues`, `persona` (`age`,
 `living_situation`, `cognitive_cues`, `proxy`), a per-turn `key` with the same shape as `answer_key`
-(a turn without one inherits the scenario's), `status` (`draft` by default, `reviewed`, `promoted`),
+(a turn without one inherits the scenario's; `validate` warns when any turn of a multi-turn item lacks its own, because
+the judge grades each reply against the conversation so far and that turn's key only, and a fact
+disclosed later cannot be expected earlier), `status` (`draft` by default, `reviewed`, `promoted`),
 and `reviewed_by`, which `reviewed` and `promoted` require.
 
 ## Skeleton

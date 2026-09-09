@@ -20,7 +20,8 @@ The approved design is `~/.claude/plans/linear-napping-phoenix.md`.
 
 ## Rules people enforce
 - Scenario spines in `scenarios/v0/` are authored by the PI. Claude formats to YAML and never
-  authors items (ADR-002). `tests/fixtures/scenarios/` is Claude-written plumbing data, draft only.
+  authors items (ADR-002). `tests/fixtures/scenarios/` is Claude-written plumbing data with
+  `reviewed_by: fixture`, a reserved reviewer: never reported, and any run containing one is draft.
 - Commits: `[worker]` for agent-produced, `[evaluator]` for handoff/state updates written after a
   verdict, `[human]` for Jeremy's. No AI co-author trailers.
 - Never enter anything into the grant application form.

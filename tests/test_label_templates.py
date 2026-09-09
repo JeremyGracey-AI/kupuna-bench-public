@@ -1,67 +1,60 @@
 import csv
 import json
+import re
 from pathlib import Path
 
-from typer.testing import CliRunner
-
-from kupuna_bench.agreement import LABEL_COLUMNS, item_key
-from kupuna_bench.cli import app
-from kupuna_bench.run import RunResult
+from kupuna_bench.chat import ScriptedChat
+from kupuna_bench.judge import ScriptedJudge
+from kupuna_bench.rubric import load_rubric
+from kupuna_bench.run import run
+from kupuna_bench.scenarios import load_scenarios
 from scripts.make_label_templates import main as make_templates
 
 FIXTURES = Path(__file__).parent / "fixtures" / "scenarios"
-runner = CliRunner()
 
 
-def _build_fake_run(tmp_path: Path) -> Path:
-    result = runner.invoke(
-        app,
-        [
-            "run", "--fake", "--scenarios", str(FIXTURES), "--allow-draft", "--runs", "2",
-            "--out", str(tmp_path),
-        ],
+def _run_with_judge_errors(tmp_path: Path) -> Path:
+    """Two models, three scenarios, two runs; the judge fails on every neutral hospice transcript."""
+    scenarios = load_scenarios(FIXTURES)
+    judge = ScriptedJudge(
+        malformed_when=lambda s, t: s.id == "t1-hospice-enrollment" and t.variant == "neutral"
     )
-    assert result.exit_code == 0, result.output
-    return next(tmp_path.glob("run-*.json"))
+    names = ("fake-a", "fake-b")
+    models = [ScriptedChat(name, family=name, responder=lambda m: "A reply.") for name in names]
+    result = run(scenarios, models=models, judge=judge, rubric=load_rubric(), runs=2, allow_draft=True)
+    path = tmp_path / "run-2026-09-09-1.json"
+    path.write_text(result.model_dump_json(), encoding="utf-8")
+    return path
 
 
-def test_label_templates_and_transcript_sheet(tmp_path: Path) -> None:
-    result_json = _build_fake_run(tmp_path)
-    run_result = RunResult.model_validate(json.loads(result_json.read_text(encoding="utf-8")))
-    run0 = [r for r in run_result.rows if r.run_index == 0 and r.verdicts is not None]
-    assert run0, "the fake run should produce graded run_index==0 rows"
-    turns_per_item = {
-        item_key(r.scenario_id, r.variant, r.model, r.run_index): len(r.verdicts.turns)
-        for r in run0
-        if r.verdicts is not None
-    }
-
+def test_templates_are_blind_and_decodable(tmp_path: Path) -> None:
+    result_json = _run_with_judge_errors(tmp_path)
     labels_dir = tmp_path / "labels"
-    csv_paths, sheet_path = make_templates(
-        result_json, ["melissa", "jeremy"], scenarios_dir=FIXTURES, out_dir=labels_dir
+    csv_paths, sheet_path, key_path = make_templates(
+        result_json, ["melissa"], scenarios_dir=FIXTURES, out_dir=labels_dir, seed=3
     )
+    key_map = json.loads(key_path.read_text(encoding="utf-8"))
+    assert key_path.parent == tmp_path and not list(labels_dir.glob("KEY-*"))  # the map stays apart
+    with csv_paths[0].open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    items = {r["item"] for r in rows}
+    assert items == set(key_map) and all(re.fullmatch(r"item-\d{2}", i) for i in items)
+    assert all(r["severity"] == "" and r["direction"] == "" for r in rows)
+    sheet = sheet_path.read_text(encoding="utf-8")
+    for leaked in ("fake-a", "fake-b", "age_cue", "neutral", "|", "information_completeness", "run 1"):
+        assert leaked not in sheet, leaked
+    assert "I'm 84" in sheet  # the stimulus itself stays visible
+    decoded = set(key_map.values())
+    assert any(k.startswith("t1-hospice-enrollment|neutral|") for k in decoded)  # judge-error rows included
+    assert len({k.rsplit("|", 1)[0] for k in decoded}) == 3 * 2 * 2  # one run per cell, every cell present
+    assert list(key_map.values()) != sorted(key_map.values())  # presentation order is shuffled by seed
 
-    assert {p.name for p in csv_paths} == {
-        f"melissa-{result_json.stem}.csv",
-        f"jeremy-{result_json.stem}.csv",
-    }
-    for path in csv_paths:
-        with path.open(encoding="utf-8", newline="") as handle:
-            reader = csv.DictReader(handle)
-            assert tuple(reader.fieldnames or ()) == LABEL_COLUMNS
-            rows = list(reader)
-        assert rows
-        counts: dict[str, int] = {}
-        for row in rows:
-            assert row["severity"] == "" and row["direction"] == ""
-            assert not row["item"].endswith("|1"), "run_index 1 must be excluded"
-            counts[row["item"]] = counts.get(row["item"], 0) + 1
-        assert counts == {item: 5 * turns for item, turns in turns_per_item.items()}
 
-    sheet_text = sheet_path.read_text(encoding="utf-8")
-    assert sheet_path.name == f"TRANSCRIPTS-{result_json.stem}.md"
-    for item in turns_per_item:
-        assert item in sheet_text
-    # No verdict data (rubric criterion ids, severities) leaks into the blind reading sheet.
-    assert "information_completeness" not in sheet_text
-    assert "autonomy_respect" not in sheet_text
+def test_answer_keys_are_in_the_sheet_by_default_and_optional(tmp_path: Path) -> None:
+    result_json = _run_with_judge_errors(tmp_path)
+    _, with_keys, _ = make_templates(result_json, ["m"], scenarios_dir=FIXTURES, out_dir=tmp_path / "a")
+    _, without, _ = make_templates(
+        result_json, ["m"], scenarios_dir=FIXTURES, out_dir=tmp_path / "b", with_keys=False
+    )
+    assert "answer key" in with_keys.read_text(encoding="utf-8").lower()
+    assert "answer key" not in without.read_text(encoding="utf-8").lower()

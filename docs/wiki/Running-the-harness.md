@@ -45,10 +45,10 @@ paid call.
 | Command | What it does | Options |
 |---|---|---|
 | `validate [DIR]` | Validates every scenario YAML and prints one PI-facing message per problem, all files at once | `DIR` defaults to `scenarios/v0` |
-| `run` | Runs every promoted scenario in both variants against each model, judges every transcript, writes the append-only record `results/run-YYYY-MM-DD-N.md` and its JSON | `--fake`, `--scenarios`, `--allow-draft`, `--runs` (default 3), `--spend-cap`, `--out`, `--models`, `--judge`, `--system-prompt` |
-| `regrade RESULT.json` | Re-judges the kept transcripts of a previous run with a different judge: the judge-calibration loop | `--judge`, `--scenarios`, `--out`, `--fake` |
+| `run` | Claims `results/run-YYYY-MM-DD-N/`, writes its manifest there, runs every promoted scenario in both variants against each model, journals each cell, judges every reply against the conversation so far and that turn's key, writes the append-only record `results/run-YYYY-MM-DD-N.md` and its JSON | `--fake`, `--scenarios`, `--allow-draft`, `--runs` (default 3), `--spend-cap`, `--out`, `--models`, `--judge`, `--system-prompt`, `--max-tokens` (default 2048), `--rubric`, `--resume DIR` |
+| `regrade RESULT.json` | Re-judges the kept transcripts of a previous run with a different judge: the judge-calibration loop; the new record names its source run | `--judge`, `--scenarios`, `--out`, `--fake`, `--max-tokens`, `--rubric` |
 | `code RESULT.json` | Blind multi-family grounded-theory coding of the run's transcripts with a forcing audit; writes a coding JSON and a memo under `docs/memos/` | `--coders`, `--orders` (default 2), `--seed` (default 0), `--human-codes`, `--out`, `--fake` |
-| `agreement LABELS.csv... --result RESULT.json` | Human–human and judge–human agreement: quadratic-weighted κ on severity, plain κ on pass/fail | `--out` |
+| `agreement LABELS.csv... --result RESULT.json` | Human–human and judge–human agreement: quadratic-weighted κ on severity with a bootstrap CI, plain κ on pass/fail, on direction, and on the joint label; S2+ confusions per direction; transcript-level A/B outcomes; the calibration verdict | `--out`, `--key` (decoding map for blinded sheets), `--min-kappa` (default 0.70), `--rubric` |
 | `chart RESULT.json` | Renders the Direction A/B failure-rate chart as SVG | `--out` |
 
 ## What a run enforces
@@ -59,12 +59,24 @@ paid call.
 - The record names every model id, the judge, the number of runs, the dataset hash (content fields
   only, so promoting an item between a run and a regrade is not a mismatch), and spend as a per-run
   delta.
-- Records are append-only: `run-YYYY-MM-DD-N` increments `N`. The JSON and SVG outputs are
-  git-ignored; the markdown record is committed.
+- Records are append-only: `run-YYYY-MM-DD-N` increments `N` over records, JSON sidecars, and run
+  directories, and the id is claimed by creating the directory before anything is written. The
+  JSON, SVG, and run directory (manifest, journal) are git-ignored; the markdown record is committed
+  and names its run id, code SHA, and manifest.
+- The judge grades one reply at a time and sees only the conversation up to that reply, that turn's
+  answer key, and the item's domain and tier; never the variant, persona, situation, or risk cues.
+- The age-cue contrast is paired on (scenario, model, run) units: the summary reports pairs complete
+  over total, pairs lost by arm, bounds that let each lost arm be a pass or a fail, and a
+  scenario-cluster bootstrap interval. Variant order is counterbalanced.
+- A reply cut off by the token limit is retried once at double the limit; one still cut off, one the
+  provider filtered, and an empty one are error rows by kind, excluded from the rates and counted.
+- A scenario with `reviewed_by: fixture` is test data: any run containing one is recorded as draft.
 
 ## Labeling and calibration
 
 Human labels are CSVs with the columns in `labels/README.md`. `scripts/make_label_templates.py`
-writes one blank template per labeler plus a judge-verdict-free reading sheet from a results JSON;
-labelers fill `severity` and `direction` blind, then `agreement` compares them with each other and
-with the judge.
+writes one blank template per labeler plus a reading sheet from a results JSON: opaque item ids,
+shuffled order, no model, condition, run index, or verdict, and each turn's answer key. The decoding
+map is written next to the results JSON; labelers fill `severity` and `direction` blind, then
+`agreement --key` compares them with each other and with the judge and prints the calibration
+verdict (severity κ and direction κ against each human).

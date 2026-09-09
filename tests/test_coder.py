@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from kupuna_bench.chat import Message, ScriptedChat
 from kupuna_bench.coder import (
     CONSTRUCT_LEXICON,
@@ -45,7 +47,7 @@ def _coders() -> list[ScriptedChat]:
 def test_incidents_one_per_transcript_with_dialogue_text() -> None:
     incidents = _incidents()
     assert len(incidents) == 3 * 2
-    assert incidents[0].id.count("|") == 3
+    assert incidents[0].id.startswith("inc-") and incidents[0].source.count("|") == 3
     assert "USER:" in incidents[0].text and "ASSISTANT:" in incidents[0].text
 
 
@@ -119,7 +121,7 @@ def test_audit_reports_overlaps_and_human_comparator() -> None:
     assert report.construct_overlap is not None and 0.0 <= report.construct_overlap <= 1.0
     assert set(report.per_family) == {"fam-a", "fam-b", "fam-c"} and report.human_overlap is None
     assert report.n_categories >= 1
-    assert report.human_match_rule.startswith("token Jaccard")
+    assert report.human_match_rule.startswith("lexical diagnostic")
     labels = {c.label for c in coding.codes}
     with_humans = audit(coding, human_codes=list(labels)[:2] + ["something no model said"])
     assert with_humans.human_codes == 3 and with_humans.human_overlap is not None
@@ -186,3 +188,58 @@ def test_render_memos_groups_by_coder_and_order() -> None:
     assert isinstance(coding, CodingResult)
     sample: list[Message] = [{"role": "user", "content": "{}"}]
     assert scripted_coder_responder(sample).startswith("{")
+
+
+def test_incident_ids_hide_model_and_variant() -> None:
+    incidents = _incidents()
+    assert all(i.id.startswith("inc-") and "|" not in i.id and "age_cue" not in i.id for i in incidents)
+    assert all("|" in i.source for i in incidents) and len({i.id for i in incidents}) == len(incidents)
+    coding = code(incidents, coders=_coders()[:1], orders=1, seed=0)
+    assert coding.incident_map == {i.id: i.source for i in incidents}
+
+
+def test_empty_batch_output_is_an_error_not_saturation() -> None:
+    incidents = _incidents()
+    silent = ScriptedChat("silent", family="s", responder=lambda m: '{"codes": [], "categories": []}')
+    coding = code(incidents, coders=[silent], orders=1, seed=0)
+    assert coding.saturation == () and coding.errors and "uncoded" in coding.errors[0]
+    assert coding.coverage == 0.0
+
+
+def test_partial_coverage_is_recorded() -> None:
+    def responder(messages: list[Message]) -> str:
+        payload = json.loads(messages[-1]["content"])
+        first = payload["incidents"][0]["incident_id"]
+        return json.dumps(
+            {
+                "codes": [{"incident_id": first, "label": "x", "memo": "m"}],
+                "categories": [{"name": "x", "properties": [], "incident_ids": [first]}],
+            }
+        )
+
+    partial = ScriptedChat("p", family="p", responder=responder)
+    coding = code(_incidents(), coders=[partial], orders=1, seed=0, batch_size=3)
+    assert coding.coverage == pytest.approx(2 / 6) and len(coding.errors) == 2 and coding.saturation == ()
+    assert len(coding.codes) == 2
+
+
+def test_uncodeable_is_coverage_and_counted() -> None:
+    def responder(messages: list[Message]) -> str:
+        payload = json.loads(messages[-1]["content"])
+        ids = [i["incident_id"] for i in payload["incidents"]]
+        return json.dumps(
+            {
+                "codes": [{"incident_id": i, "label": "uncodeable", "memo": "no incident here"} for i in ids],
+                "categories": [],
+            }
+        )
+
+    coding = code(_incidents(), coders=[ScriptedChat("u", family="u", responder=responder)], orders=1, seed=0)
+    assert coding.coverage == 1.0 and coding.uncodeable == 6 and coding.errors == ()
+
+
+def test_human_comparator_is_labeled_lexical() -> None:
+    coding = code(_incidents(), coders=_coders(), orders=1, seed=0)
+    report = audit(coding, human_codes=["not " + coding.categories[0].name])
+    assert report.human_overlap == 1.0  # negation does not change a token set: the number is lexical only
+    assert report.human_match_rule.startswith("lexical diagnostic")

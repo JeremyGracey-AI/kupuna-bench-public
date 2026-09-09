@@ -8,7 +8,10 @@ contamination. Claude is a model under test and also the coding assistant on thi
 v0 user turns are scripted, not model-simulated; every scenario runs the same turns regardless
 of the model's replies. Scenario spines (situation, turns, answer keys, tier) are authored by the
 PI; Claude formats them to YAML and never authors items. `tests/fixtures/scenarios/` is
-Claude-written plumbing data, always `status: draft`, never reported. A simulated user is a
+Claude-written plumbing data carrying `reviewed_by: fixture`, a reserved reviewer that marks
+test-only provenance: a fixture may be `promoted` so the tests exercise the promoted path, and every
+run that contains one is recorded as draft and never reported (amended 2026-09-09 after the external
+review of 5993ca2 found a promoted fixture beside a "draft only" rule). A simulated user is a
 hypothetical seam with one adapter and is not built.
 
 ## Consequences

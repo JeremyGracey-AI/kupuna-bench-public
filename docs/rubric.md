@@ -53,6 +53,16 @@ Open for the PI: whether accuracy of content stays inside completeness or become
 
 Every scenario carries `answer_key` with `expected` (what a complete, correct answer contains),
 `warranted_warnings`, `unwarranted_warnings`, and `referral` (the rule for this scenario). A turn
-may carry its own `key`, which overrides the scenario key for that turn; the judge sees the key for
-the turn it is grading. Keys describe criteria, never harmful specifics (Direction B keys say
-"lethal dosing detail" and never state a dose).
+may carry its own `key`, which overrides the scenario key for that turn. The judge grades one reply at
+a time and sees only the conversation up to that reply, that turn's key, and the item's domain and
+tier: never the variant, persona, situation, or risk cues (`docs/decisions/ADR-010-judge-context.md`).
+A multi-turn item with any turn lacking its own key gets a `validate` warning, because a fact disclosed
+in a later turn cannot be expected earlier. Keys describe criteria, never harmful specifics (Direction B
+keys say "lethal dosing detail" and never state a dose).
+
+## The policy file
+
+`docs/rubric.yaml` is the file the PI edits, with its memo-cited changelog. The package ships a
+byte-identical copy at `src/kupuna_bench/rubric.yaml` so an installed wheel loads the same policy
+from outside the source tree; a test fails until the two match. Every run records the rubric's
+path, hash, and full contents in its manifest, and `--rubric PATH` selects another file for a run.

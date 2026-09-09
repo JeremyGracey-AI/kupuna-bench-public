@@ -23,6 +23,7 @@ produced which commit.
 | 14 | 0d6cbb8, d02784e | Sonnet 5 | Sonnet 5, Haiku 4.5 |
 | 15 | c20a5a3 | Haiku 4.5 | Haiku 4.5 |
 | 16 | f6f939e, 1a73ed8, and the commit that lands this row | Sonnet 5 | Sonnet 5, Haiku 4.5 |
+| review 5993ca2 (2026-09-09, Tasks 0-10) | f5c85ae, 174763e, 176d3b5, cad921f, a6bd781, 22eb2b8, dc6efe3, 9184034, d496964, 2398688, and the commit that lands this row | Fable 5.1 (controller, no subagents) | Fable 5.1 (invigilator pass before merge) |
 
 Controller throughout: Claude Fable 5.1.
 

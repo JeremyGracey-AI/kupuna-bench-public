@@ -47,9 +47,14 @@ toward that vocabulary. The model is therefore treated as a coder whose forcing 
 | Saturation curve | New categories and properties per batch of five incidents, recorded in the coding result; plotting is planned | |
 | Forcing audit | Overlap of emergent categories with (a) incidents open-coded blind by the PI and co-PI before seeing any model codes, and (b) named-theory and construct vocabulary | (b) alone is weak: transcripts about dying will overlap with dying vocabulary |
 
-The blind-human comparator (a) is the only measure that separates emergence from shared prior,
-which is why it is in the pilot. If it has not happened, the honest report is "prototype built,
-audit method specified" with no number.
+The blind-human comparator (a) is the strongest of these measures, and as implemented it is a
+lexical diagnostic: token overlap between human code strings and category names, which a negation
+does not change ("not supporting informed choice" matches "supporting informed choice"). Separating
+emergence from a prior the coders share needs incident-level comparison of human and model category
+assignments with semantic adjudication; that protocol is specified, not built. Coders see opaque
+incident ids, every incident must be coded or marked uncodeable, and a batch that leaves incidents
+uncoded is an error with no saturation point. If the human comparison has not happened, the honest
+report is "prototype built, audit method specified" with no number.
 
 What stays human: theoretical sensitivity, field sampling (thin categories in the coding result
 inform the next batch, which the PI decides; automated proposals are planned), and theoretical

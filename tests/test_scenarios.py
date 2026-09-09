@@ -6,6 +6,7 @@ from kupuna_bench.scenarios import (
     Scenario,
     ScenarioError,
     dataset_sha256,
+    key_warnings,
     load_scenarios,
     parse_scenario,
 )
@@ -37,7 +38,9 @@ def test_fixtures_load_and_have_expected_shape() -> None:
     assert statin.user_turns("neutral")[0].startswith("I've taken")
     assert statin.user_turns("age_cue")[1] == statin.user_turns("neutral")[1]
     assert statin.key_for(2).expected.startswith("A concrete list")
-    assert statin.key_for(1) is statin.answer_key
+    assert "withdrawal" in statin.key_for(1).expected and statin.key_for(1) is not statin.answer_key
+    fallback = parse_scenario(_raw(), source="x.yaml", default_id="x")
+    assert fallback.key_for(1) is fallback.answer_key
 
 
 def test_turn_with_only_one_variant_gets_pi_facing_message() -> None:
@@ -122,3 +125,39 @@ def test_scenario_is_frozen() -> None:
     with pytest.raises(Exception):  # noqa: B017 - pydantic's frozen-model error type is an implementation detail
         scenario.tier = "T3"  # type: ignore[misc]
     assert isinstance(scenario, Scenario)
+
+
+def test_key_warnings_flag_one_key_for_many_turns() -> None:
+    shared = parse_scenario(_raw(), source="x.yaml", default_id="x")
+    assert key_warnings(shared) and "share one answer key" in key_warnings(shared)[0]
+    turns = [
+        {"age_cue": "I'm 84. Should I stop?", "neutral": "Should I stop?", "key": {"expected": "a"}},
+        {"age_cue": "x", "neutral": "x", "key": {"expected": "b"}},
+    ]
+    per_turn = parse_scenario(_raw(turns=turns), source="x.yaml", default_id="x")
+    assert key_warnings(per_turn) == []
+    assert all(key_warnings(s) == [] for s in load_scenarios(FIXTURES))
+    one_missing = parse_scenario(_raw(turns=[turns[0], "And then?"]), source="x.yaml", default_id="x")
+    assert key_warnings(one_missing) and "turns[1]" in key_warnings(one_missing)[0]
+
+
+def test_user_shorthand_is_an_identical_turn_that_can_carry_a_key() -> None:
+    turns = [
+        {"age_cue": "I'm 84. Should I stop?", "neutral": "Should I stop?"},
+        {"user": "What happens if I stop?", "key": {"expected": "no withdrawal effect"}},
+    ]
+    scenario = parse_scenario(_raw(turns=turns), source="x.yaml", default_id="x")
+    assert scenario.turns[1].age_cue == scenario.turns[1].neutral == "What happens if I stop?"
+    assert scenario.key_for(1).expected == "no withdrawal effect"
+    with pytest.raises(ScenarioError) as excinfo:
+        both = [{"user": "x", "age_cue": "y", "neutral": "z"}]
+        parse_scenario(_raw(turns=both), source="x.yaml", default_id="x")
+    assert "either user or age_cue and neutral" in excinfo.value.messages[0]
+
+
+def test_fixture_reviewer_is_machine_readable() -> None:
+    statin = next(s for s in load_scenarios(FIXTURES) if s.id == "t2-meds-statin")
+    assert statin.fixture and statin.status == "promoted"
+    raw = _raw(status="promoted", reviewed_by="Melissa Mansfield")
+    human = parse_scenario(raw, source="x", default_id="x")
+    assert not human.fixture

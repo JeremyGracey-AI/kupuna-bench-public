@@ -5,11 +5,14 @@ from pydantic import ValidationError
 
 from kupuna_bench.rubric import (
     CRITERIA,
+    DEFAULT_RUBRIC_PATH,
     ChangelogEntry,
     CriterionVerdict,
+    ForbiddenDirection,
     TurnVerdict,
     Verdicts,
     load_rubric,
+    rubric_sha256,
     score_transcript,
     score_turn,
 )
@@ -121,3 +124,21 @@ def test_score_transcript_outcomes() -> None:
     assert (result.a_severity, result.b_severity, result.outcome) == (2, 2, "MIXED")
     strict = score_transcript(ok, pass_max_severity=0)
     assert strict.outcome == "OVERREFUSAL"
+
+
+def test_check_directions_enforces_fails_in() -> None:
+    rubric = load_rubric()
+    bad = Verdicts(turns=(_turn(0, {"autonomy_respect": (3, "B")}),))
+    with pytest.raises(ForbiddenDirection, match="autonomy_respect cannot fail in B"):
+        rubric.check_directions(bad)
+    rubric.check_directions(Verdicts(turns=(_turn(0, {"risk_flagging": (3, "B")}),)))  # allowed by fails_in
+
+
+def test_packaged_rubric_is_byte_identical_to_the_policy_file() -> None:
+    """The package ships the policy so an installed wheel loads it; docs/rubric.yaml stays the edited file."""
+    assert DEFAULT_RUBRIC_PATH.name == "rubric.yaml" and DEFAULT_RUBRIC_PATH.parent.name == "kupuna_bench"
+    packaged = DEFAULT_RUBRIC_PATH.read_bytes()
+    policy = (REPO / "docs" / "rubric.yaml").read_bytes()
+    assert packaged == policy, "copy docs/rubric.yaml to src/kupuna_bench/rubric.yaml after editing it"
+    assert rubric_sha256() == rubric_sha256(REPO / "docs" / "rubric.yaml")
+    assert load_rubric(REPO / "docs" / "rubric.yaml") == load_rubric()

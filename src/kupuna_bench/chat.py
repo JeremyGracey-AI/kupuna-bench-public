@@ -2,7 +2,9 @@
 
 Production adapters never raise. A failed call returns Reply(ok=False, error=...), so one
 dead model cannot abort a run; the runner turns it into a row. Retries cover only transient
-statuses (408, 429, 5xx), lifted from llm-council-mcp's OpenRouter client.
+statuses (408, 429, 5xx), lifted from llm-council-mcp's OpenRouter client. Every reply carries
+its completion reason, served model, provider, and request id; a reply cut off by the token
+limit is retried once at double the limit and otherwise reported as `length` (ADR-013).
 """
 
 from __future__ import annotations
@@ -13,6 +15,8 @@ from typing import Any, Literal, Protocol, TypedDict, cast, runtime_checkable
 
 import httpx
 from pydantic import BaseModel, ConfigDict
+
+from kupuna_bench.manifest import AdapterSpec
 
 RETRY_STATUSES: tuple[int, ...] = (408, 429, 500, 502, 503, 504)
 
@@ -53,6 +57,31 @@ class Reply(BaseModel):
     text: str = ""
     usage: Usage = Usage()
     error: str | None = None
+    finish_reason: str | None = None  # "stop", "length", "filtered", or the provider's raw value
+    served_model: str | None = None
+    provider: str | None = None
+    request_id: str | None = None
+    retried_for_length: bool = False
+
+
+_FINISH_NAMES = {
+    "stop": "stop",
+    "end_turn": "stop",
+    "stop_sequence": "stop",
+    "tool_calls": "stop",
+    "length": "length",
+    "max_tokens": "length",
+    "content_filter": "filtered",
+    "refusal": "filtered",
+}
+
+
+def normalize_finish(raw: object) -> str | None:
+    """Provider stop reasons onto three names; anything unknown passes through as text."""
+    if raw is None:
+        return None
+    text = str(raw)
+    return _FINISH_NAMES.get(text, text)
 
 
 @runtime_checkable
@@ -61,6 +90,8 @@ class Chat(Protocol):
     family: str
 
     def complete(self, messages: Sequence[Message], *, json_mode: bool = False) -> Reply: ...
+
+    def spec(self) -> AdapterSpec: ...
 
 
 def family_of(model_id: str) -> str:
@@ -90,6 +121,9 @@ class ScriptedChat:
         self.family = family
         self._responder = responder
         self._fail_when = fail_when
+
+    def spec(self) -> AdapterSpec:
+        return AdapterSpec(name=self.name, provider="scripted")
 
     def complete(self, messages: Sequence[Message], *, json_mode: bool = False) -> Reply:
         if self._fail_when is not None:
@@ -151,6 +185,8 @@ class OpenRouterChat:
         family: str | None = None,
         timeout: float = 120.0,
         max_retries: int = 2,
+        max_tokens: int = 2048,
+        truncation_retry: int = 1,
         transport: httpx.BaseTransport | None = None,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
@@ -159,11 +195,27 @@ class OpenRouterChat:
         self._api_key = api_key
         self._timeout = timeout
         self._max_retries = max_retries
+        self._max_tokens = max_tokens
+        self._truncation_retry = truncation_retry
         self._transport = transport
         self._sleep = sleep
 
-    def complete(self, messages: Sequence[Message], *, json_mode: bool = False) -> Reply:
-        payload: dict[str, Any] = {"model": self.name, "messages": [dict(m) for m in messages]}
+    def spec(self) -> AdapterSpec:
+        return AdapterSpec(
+            name=self.name,
+            provider="openrouter",
+            max_tokens=self._max_tokens,
+            timeout=self._timeout,
+            max_retries=self._max_retries,
+            truncation_retry=self._truncation_retry,
+        )
+
+    def _once(self, messages: Sequence[Message], *, json_mode: bool, max_tokens: int) -> Reply:
+        payload: dict[str, Any] = {
+            "model": self.name,
+            "messages": [dict(m) for m in messages],
+            "max_tokens": max_tokens,
+        }
         if json_mode:
             payload["response_format"] = {"type": "json_object"}
         headers = {
@@ -184,7 +236,8 @@ class OpenRouterChat:
         if body is None:
             return Reply(ok=False, error=error)
         try:
-            message = cast(dict[str, Any], cast(list[Any], body["choices"])[0]["message"])
+            choice = cast(dict[str, Any], cast(list[Any], body["choices"])[0])
+            message = cast(dict[str, Any], choice["message"])
             usage = cast(dict[str, Any], body.get("usage") or {})
             cost = usage.get("cost")
             return Reply(
@@ -195,9 +248,22 @@ class OpenRouterChat:
                     output_tokens=int(usage.get("completion_tokens") or 0),
                     cost_usd=float(cost) if cost is not None else None,
                 ),
+                finish_reason=normalize_finish(choice.get("finish_reason")),
+                served_model=str(body["model"]) if body.get("model") else None,
+                provider=str(body["provider"]) if body.get("provider") else None,
+                request_id=str(body["id"]) if body.get("id") else None,
             )
         except (AttributeError, KeyError, IndexError, TypeError, ValueError) as exc:
             return Reply(ok=False, error=f"unexpected response shape: {type(exc).__name__}: {exc}")
+
+    def complete(self, messages: Sequence[Message], *, json_mode: bool = False) -> Reply:
+        return _complete_with_truncation_retry(
+            self._once,
+            messages,
+            json_mode=json_mode,
+            max_tokens=self._max_tokens,
+            retries=self._truncation_retry,
+        )
 
 
 class AnthropicChat:
@@ -210,7 +276,8 @@ class AnthropicChat:
         api_key: str,
         timeout: float = 120.0,
         max_retries: int = 2,
-        max_tokens: int = 1024,
+        max_tokens: int = 2048,
+        truncation_retry: int = 1,
         transport: httpx.BaseTransport | None = None,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
@@ -220,16 +287,36 @@ class AnthropicChat:
         self._timeout = timeout
         self._max_retries = max_retries
         self._max_tokens = max_tokens
+        self._truncation_retry = truncation_retry
         self._transport = transport
         self._sleep = sleep
 
+    def spec(self) -> AdapterSpec:
+        return AdapterSpec(
+            name=self.name,
+            provider="anthropic",
+            max_tokens=self._max_tokens,
+            timeout=self._timeout,
+            max_retries=self._max_retries,
+            truncation_retry=self._truncation_retry,
+        )
+
     def complete(self, messages: Sequence[Message], *, json_mode: bool = False) -> Reply:
+        return _complete_with_truncation_retry(
+            self._once,
+            messages,
+            json_mode=json_mode,
+            max_tokens=self._max_tokens,
+            retries=self._truncation_retry,
+        )
+
+    def _once(self, messages: Sequence[Message], *, json_mode: bool, max_tokens: int) -> Reply:
         system_parts = [m["content"] for m in messages if m["role"] == "system"]
         if json_mode:
             system_parts.append("Respond with a single JSON object and nothing else.")
         payload: dict[str, Any] = {
             "model": self.name,
-            "max_tokens": self._max_tokens,
+            "max_tokens": max_tokens,
             "messages": [dict(m) for m in messages if m["role"] != "system"],
         }
         if system_parts:
@@ -261,6 +348,26 @@ class AnthropicChat:
                     input_tokens=int(usage.get("input_tokens") or 0),
                     output_tokens=int(usage.get("output_tokens") or 0),
                 ),
+                finish_reason=normalize_finish(body.get("stop_reason")),
+                served_model=str(body["model"]) if body.get("model") else None,
+                provider="anthropic",
+                request_id=str(body["id"]) if body.get("id") else None,
             )
         except (AttributeError, KeyError, TypeError, ValueError) as exc:
             return Reply(ok=False, error=f"unexpected response shape: {type(exc).__name__}: {exc}")
+
+
+def _complete_with_truncation_retry(
+    once: Callable[..., Reply], messages: Sequence[Message], *, json_mode: bool, max_tokens: int, retries: int
+) -> Reply:
+    """One retry at double the token limit when a reply was cut off; the last reply says what happened."""
+    limit = max_tokens
+    retried = False
+    for attempt in range(retries + 1):
+        reply = once(messages, json_mode=json_mode, max_tokens=limit)
+        if reply.finish_reason == "length" and attempt < retries:
+            limit *= 2
+            retried = True
+            continue
+        return reply.model_copy(update={"retried_for_length": retried}) if retried else reply
+    raise AssertionError("unreachable")

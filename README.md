@@ -59,8 +59,12 @@ uv run kupuna-bench run --fake --scenarios tests/fixtures/scenarios --allow-draf
 ```
 
 `--fake` uses scripted adapters and needs no API key. Real runs read `OPENROUTER_API_KEY` (and
-optionally `ANTHROPIC_API_KEY`) plus `KUPUNA_MODELS`, `KUPUNA_JUDGE`, and `KUPUNA_CODERS`. Other
-commands: `regrade`, `agreement`, `code` (grounded-theory coding with a forcing audit), `chart`.
+optionally `ANTHROPIC_API_KEY`) plus `KUPUNA_MODELS`, `KUPUNA_JUDGE`, and `KUPUNA_CODERS`. A run
+claims `results/run-<id>/` first and writes its manifest there before the first call and a journal
+line per completed cell; `run --resume results/run-<id>` finishes an interrupted run, and `--rubric`
+selects another policy file. Other commands: `regrade` (re-judge a run's transcripts; the record
+names its source run), `agreement` (κ on severity and on direction, `--key` decodes blinded sheets,
+`--min-kappa` is the calibration bar), `code` (grounded-theory coding with a forcing audit), `chart`.
 
 ## Status
 
@@ -78,11 +82,11 @@ the working repository until the application is submitted.
 
 | Path | What it holds |
 |---|---|
-| `src/kupuna_bench/` | scenarios, chat, judge, rubric, run, records, gate, agreement, coder, chart, workbench, cli |
+| `src/kupuna_bench/` | scenarios, chat, judge, rubric, run, manifest, records, gate, agreement, coder, chart, workbench, cli |
 | `docs/construct.md` | the construct, its theoretical origin, what is new, the bibliography |
 | `docs/method.md` | Classic Grounded Theory as the construct-definition method; the forcing audit |
 | `docs/rubric.md`, `docs/rubric.yaml` | tiers, severities, the five criteria; the policy file with its memo-cited changelog |
-| `docs/decisions/` | ADR-001 through ADR-008 |
+| `docs/decisions/` | ADR-001 through ADR-013 |
 | `docs/memos/`, `docs/sampling-log.md` | constant-comparison memos; theoretical-sampling batches |
 | `scenarios/probe/` | two draft calibration items (human-authored) |
 | `labels/` | the label CSV contract and the template script's README |

@@ -164,7 +164,62 @@ def test_anthropic_success_moves_system_and_parses_blocks() -> None:
         {"role": "user", "content": "x"},
     ]
     reply = chat.complete(messages)
-    assert reply == Reply(ok=True, text="ab", usage=Usage(input_tokens=7, output_tokens=3, cost_usd=None))
+    assert reply.ok and reply.text == "ab"
+    assert reply.usage == Usage(input_tokens=7, output_tokens=3, cost_usd=None)
+    assert reply.provider == "anthropic" and reply.finish_reason is None
     sent = json.loads(captured[0].content)
     assert sent["system"] == "be brief" and sent["messages"] == [{"role": "user", "content": "x"}]
+    assert sent["max_tokens"] == 2048
     assert captured[0].headers["x-api-key"] == "k" and chat.family == "anthropic"
+
+
+def _body(text: str, finish: str) -> dict[str, object]:
+    return {
+        "id": "gen-1",
+        "model": "openai/gpt-5-2026",
+        "provider": "OpenAI",
+        "choices": [{"message": {"content": text}, "finish_reason": finish}],
+        "usage": {"prompt_tokens": 1, "completion_tokens": 1, "cost": 0.0},
+    }
+
+
+def test_openrouter_records_completion_metadata_and_retries_truncation_once() -> None:
+    transport = _openrouter_transport(
+        [httpx.Response(200, json=_body("half", "length")), httpx.Response(200, json=_body("whole", "stop"))]
+    )
+    chat = OpenRouterChat(
+        "openai/gpt-5", api_key="k", transport=transport, sleep=lambda s: None, max_tokens=100
+    )
+    reply = chat.complete(_messages("x"))
+    assert reply.ok and reply.text == "whole" and reply.finish_reason == "stop" and reply.retried_for_length
+    assert reply.served_model == "openai/gpt-5-2026" and reply.provider == "OpenAI"
+    assert reply.request_id == "gen-1"
+    sent = [json.loads(c.content) for c in transport.calls]  # type: ignore[attr-defined]
+    assert [s["max_tokens"] for s in sent] == [100, 200]
+    assert chat.spec().max_tokens == 100 and chat.spec().truncation_retry == 1
+
+
+def test_openrouter_still_truncated_after_retry_is_reported_not_hidden() -> None:
+    transport = _openrouter_transport([httpx.Response(200, json=_body("half", "length"))])
+    chat = OpenRouterChat("openai/gpt-5", api_key="k", transport=transport, sleep=lambda s: None)
+    reply = chat.complete(_messages("x"))
+    assert reply.ok and reply.finish_reason == "length" and reply.retried_for_length
+    assert len(transport.calls) == 2  # type: ignore[attr-defined]
+
+
+def test_anthropic_normalizes_stop_reason() -> None:
+    body = {
+        "id": "msg-1",
+        "model": "claude-x",
+        "stop_reason": "max_tokens",
+        "content": [{"type": "text", "text": "t"}],
+        "usage": {},
+    }
+    transport = _openrouter_transport([httpx.Response(200, json=body)])
+    chat = AnthropicChat(
+        "claude-x", api_key="k", transport=transport, sleep=lambda s: None, truncation_retry=0
+    )
+    reply = chat.complete(_messages("x"))
+    assert reply.finish_reason == "length" and reply.served_model == "claude-x"
+    assert reply.request_id == "msg-1"
+    assert len(transport.calls) == 1 and chat.spec().max_tokens == 2048  # type: ignore[attr-defined]

@@ -2,7 +2,8 @@
 
 The YAML a clinician writes is the most important interface in this repo. Four required
 fields (domain, tier, turns, answer_key); a turn is a quoted string (identical in both
-variants) or a mapping with age_cue and neutral; status: promoted requires reviewed_by.
+variants), a mapping with `user` (identical, and able to carry its own `key`), or a mapping
+with age_cue and neutral; status: promoted requires reviewed_by.
 Errors are reported for every file at once, each with the fix in the message.
 """
 
@@ -31,6 +32,7 @@ Variant = Literal["age_cue", "neutral"]
 
 VARIANTS: tuple[Variant, ...] = ("age_cue", "neutral")
 TIERS: tuple[Tier, ...] = ("T1", "T2", "T3")
+FIXTURE_REVIEWER = "fixture"  # reserved: test-only provenance; such items are never reported
 
 
 class AnswerKey(BaseModel):
@@ -87,6 +89,11 @@ class Scenario(BaseModel):
             )
         return self
 
+    @property
+    def fixture(self) -> bool:
+        """Test data by construction (`reviewed_by: fixture`); a run containing one is never reportable."""
+        return self.reviewed_by == FIXTURE_REVIEWER
+
     def user_turns(self, variant: Variant) -> list[str]:
         return [getattr(turn, variant) for turn in self.turns]
 
@@ -116,9 +123,18 @@ def _normalize_turns(raw_turns: Any, source: str) -> tuple[list[dict[str, Any]],
         if isinstance(item, str):
             turns.append({"age_cue": item, "neutral": item})
         elif isinstance(item, dict):
-            mapping = cast(dict[str, Any], item)
+            mapping = dict(cast(dict[str, Any], item))
             has_age, has_neutral = "age_cue" in mapping, "neutral" in mapping
-            if has_age != has_neutral:
+            if "user" in mapping:
+                if has_age or has_neutral:
+                    messages.append(
+                        f"{source} turns[{index}]: use either user or age_cue and neutral, not both "
+                        "(user means the same text in both variants)."
+                    )
+                else:
+                    text = mapping.pop("user")
+                    mapping["age_cue"] = mapping["neutral"] = text
+            elif has_age != has_neutral:
                 present, missing = ("age_cue", "neutral") if has_age else ("neutral", "age_cue")
                 messages.append(
                     f"{source} turns[{index}]: has {present} but no {missing}. A turn that differs needs "
@@ -162,6 +178,22 @@ def parse_scenario(raw: dict[str, Any], *, source: str, default_id: str) -> Scen
         raise ScenarioError(
             [_translate(cast(dict[str, Any], error), data, source) for error in exc.errors()]
         ) from None
+
+
+def key_warnings(scenario: Scenario) -> list[str]:
+    """PI-facing: a shared key over several turns expects later disclosures too early (review finding 2)."""
+    missing = [index for index, turn in enumerate(scenario.turns) if turn.key is None]
+    if len(scenario.turns) < 2 or not missing:
+        return []
+    advice = (
+        "a fact disclosed in a later turn cannot be expected earlier. Give each turn its own key "
+        "(turns[i].key) that names only what the person has said by that turn."
+    )
+    if len(missing) == len(scenario.turns):
+        return [f"{scenario.id}: {len(scenario.turns)} turns share one answer key; {advice}"]
+    names = ", ".join(f"turns[{index}]" for index in missing)
+    partial = f"{names} fall back to the scenario answer key while other turns have keys"
+    return [f"{scenario.id}: {partial}; {advice}"]
 
 
 def load_scenarios(directory: Path) -> list[Scenario]:
