@@ -147,9 +147,11 @@ def build_turn_messages(
 
 
 def parse_turn_verdict(text: str, *, turn: int, rubric: Rubric | None = None) -> TurnVerdict:
-    """One reply's verdicts; every rejection keeps the raw text and the turn."""
+    """One reply's verdicts. The request fixes the graded turn, so an omitted `turn` is filled from
+    it; a stated turn that contradicts the request is rejected. Every rejection keeps the raw text
+    and the turn."""
     try:
-        verdict = TurnVerdict.model_validate(first_json_object(text))
+        verdict = TurnVerdict.model_validate({"turn": turn, **first_json_object(text)})
     except MalformedJudgeOutput as exc:
         raise MalformedJudgeOutput(exc.reason, raw=text, turn=turn) from None
     except ValidationError as exc:

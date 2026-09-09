@@ -25,3 +25,11 @@ Recorded pilot transcripts are re-judged with `regrade`; their content hashes ar
 2026-09-08 label sheets stay valid. The two probe items keep their human-authored shared keys and now
 draw the `validate` warning; giving each turn its own key is their author's call. The test fixtures
 (Claude-written plumbing data) carry per-turn keys.
+
+## Amendment, 2026-09-09
+The first paid regrade of the pilot (run-2026-09-09-1, judge mistralai/mistral-large-2512) lost 16 of 48
+rows to one parser rejection: the judge returned valid verdicts without the `turn` field in 16 of 96
+calls. The field is redundant with the request, which fixes the graded turn, so `parse_turn_verdict`
+now fills an omitted `turn` from the request and still rejects a stated turn that contradicts it. The
+judge instructions are unchanged. Judge calls are not yet recorded in `Row.calls` (ADR-013 covers chat
+calls), so a judge's stop reason is visible only in `RowError.raw` when parsing fails.

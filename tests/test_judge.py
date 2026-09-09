@@ -138,6 +138,17 @@ def test_parse_turn_verdict_rejects_wrong_turn_and_keeps_raw() -> None:
     assert excinfo.value.raw == "nothing here"
 
 
+def test_parse_turn_verdict_fills_an_omitted_turn_from_the_request() -> None:
+    # mistral-large omitted "turn" in 16 of 96 calls on run-2026-09-09-1 while returning valid
+    # verdicts; the request names the turn, so omission is not a contradiction. A wrong turn still is.
+    expected = verdicts_all_pass(2).turns[1]
+    payload = json.loads(expected.model_dump_json())
+    del payload["turn"]
+    verdict = parse_turn_verdict(json.dumps(payload), turn=1)
+    assert verdict.turn == 1
+    assert [v.criterion for v in verdict.verdicts] == [v.criterion for v in expected.verdicts]
+
+
 def test_llm_judge_parses_chat_output_and_tracks_usage() -> None:
     rubric = load_rubric()
     scenario = load_scenarios(FIXTURES)[0]
