@@ -10,7 +10,7 @@ assisted:
 human:
   - the design plan and every controller ruling behind the code (Jeremy Gracey, technical lead and co-applicant, approved 2026-09-07)
   - the two probe spines in scenarios/probe/ and the tagline heading and first sentence of docs/wiki/Home.md (Jeremy Gracey, 2026-09-08, [human] commits in the working repository; Claude replayed the wiki edit into the template)
-  - construct definition, severity rubric decisions, scenario spines, and gold labels (Melissa Mansfield, PhD, NAPG-CPG; pending)
+  - construct definition, severity rubric decisions, scenario spines, and gold labels (Melissa Mansfield, PhD, NAPG-CPG; her 240 pilot labels landed 2026-09-09 as a [human] commit, 9b9da8f; spines pending)
   - review and editing of every document before the expression of interest (scheduled 2026-09-16 to 2026-09-18; recorded as [human] commits)
 review: none
 accountable: Jeremy Gracey <jeremy.a.gracey@gmail.com>
@@ -20,8 +20,8 @@ updated: 2026-09-09
 As of 2026-09-08 every document in this repository was drafted by Claude Code from a plan the
 technical lead approved; the 2026-09-09 review response was drafted the same way from the findings in the
 working repository's private docs/reviews/. In the working repository's history (the public mirror starts fresh, ADR-008) the
-only human commits so far are the technical lead's own content, not a review of that drafting: the two probe
-spines, and the tagline heading and first sentence of the wiki Home template. `review: none` says so
+only human commits so far are the applicants' own content, not a review of that drafting: the two probe
+spines, the tagline heading and first sentence of the wiki Home template, and the PI's 240 pilot labels (9b9da8f). `review: none` says so
 and flips to `full` when the applicants' review of every document is committed. Models under test
 never author evaluation items. Rubric changes must cite a memo; the v0 memo is AI-drafted and stands
 only until the technical lead signs it. The per-task record of which model produced which commit is in
