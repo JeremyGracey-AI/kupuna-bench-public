@@ -44,7 +44,6 @@ pilot numbers: results are published with the technical report.
 
 ## Team
 
-The Gerontechnology Foundation (501(c)(3) arm of The Gerontechnology Group, Houston, Texas).
-PI: Melissa Mansfield, PhD, CPG. Co-PI and methodologist: Jeremy A. Gracey, MS. Medical advisor:
-Nadine Webering, MD. Co-medical director: CAPT Gregory Raczniak, MD, PhD, USPHS. Clinical
-psychologist: to be filled. Cite the software with `CITATION.cff`; every release is archived on Zenodo under the concept DOI [10.5281/zenodo.22667583](https://doi.org/10.5281/zenodo.22667583).
+The Gerontechnology Group, LLC (Houston, Texas).
+PI: Melissa Mansfield, PhD, NAPG-CPG. Technical Lead and Co-Applicant: Jeremy A. Gracey, MS.
+Medical Director: CAPT Gregory Raczniak, MD, PhD, USPHS. Second labeler: to be confirmed. Cite the software with `CITATION.cff`; every release is archived on Zenodo under the concept DOI [10.5281/zenodo.22667583](https://doi.org/10.5281/zenodo.22667583).

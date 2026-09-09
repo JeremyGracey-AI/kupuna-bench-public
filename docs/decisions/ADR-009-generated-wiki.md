@@ -2,7 +2,7 @@
 
 ## Context
 A wiki makes the construct, rubric, method, and harness readable without opening files, and the
-co-PI asked for one on 2026-09-08. A hand-edited wiki would be a second source of truth beside
+technical lead asked for one on 2026-09-08. A hand-edited wiki would be a second source of truth beside
 `docs/`, and a wiki anyone can write to is a second path by which material the mirror excludes
 (ADR-008) could reach the public.
 
@@ -26,4 +26,4 @@ appear on the wiki because their files are not on the allowlist. The wiki moves 
 when the Foundation's organization exists (ADR-001).
 
 ## Amendment, 2026-09-08
-Twice on the day it was introduced, the export overwrote hand edits the co-PI had made on the wiki (recovered from the wiki's history and ported to `docs/wiki/Home.md`). `scripts/export_wiki.sh` now fetches first and refuses when the wiki has commits since the last `[worker] regenerate wiki` commit, printing them and their diff; `FORCE=1` overrides once the edits are ported. The rule stays: edits go to the source, and the exporter enforces it.
+Twice on the day it was introduced, the export overwrote hand edits the technical lead had made on the wiki (recovered from the wiki's history and ported to `docs/wiki/Home.md`). `scripts/export_wiki.sh` now fetches first and refuses when the wiki has commits since the last `[worker] regenerate wiki` commit, printing them and their diff; `FORCE=1` overrides once the edits are ported. The rule stays: edits go to the source, and the exporter enforces it.

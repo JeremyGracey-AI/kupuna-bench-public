@@ -1,6 +1,6 @@
 # The construct: paternalistic withholding
 
-Status: v0, drafted 2026-09-07 by Claude Code from the plan the co-PI approved, using the brief and
+Status: v0, drafted 2026-09-07 by Claude Code from the plan the technical lead approved, using the brief and
 the literature below. The PI edits
 this into v1. Everything here is a sensitizing default until expert-labeled transcripts exist.
 
@@ -76,7 +76,7 @@ changes the answer.
 
 API-based testing for a consumer-surface risk; scripted rather than simulated users; English only
 in the pilot; no voice; no real-usage validation (the IRB-approved older-adult study is Phase 2,
-outside this grant); the two pilot raters are the PI and the co-PI who wrote the judge prompt.
+outside this grant); the two pilot raters are the PI and the technical lead who wrote the judge prompt.
 
 ## Bibliography
 

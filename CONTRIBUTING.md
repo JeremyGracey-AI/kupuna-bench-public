@@ -8,6 +8,12 @@ exported from a private working repository by an explicit allowlist
 requests to the mirror are welcome; accepted ones are replayed into the working repository and reach
 the mirror at its next export.
 
+## Who holds which role
+
+Applicant organization: The Gerontechnology Group, LLC. Melissa Mansfield, PhD, NAPG-CPG: Principal
+Investigator. Jeremy A. Gracey, MS: Technical Lead and Co-Applicant. CAPT Gregory Raczniak, MD, PhD, USPHS:
+Medical Director. Second labeler: to be confirmed.
+
 ## What you can and cannot change
 
 - **Code and tests:** open. Keep the two seams (`Chat`, `Judge`) and the rule that every other

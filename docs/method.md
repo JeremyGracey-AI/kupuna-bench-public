@@ -1,6 +1,6 @@
 # Method: Classic Grounded Theory as the construct-definition method
 
-Status: v0, drafted 2026-09-07 by Claude Code from the plan the co-PI (methodologist) approved.
+Status: v0, drafted 2026-09-07 by Claude Code from the plan the technical lead (methodologist) approved.
 Answers the question "how would you
 define good model behavior?": by constant comparison over expert-labeled transcripts, with
 theoretical sampling as the scenario-generation policy and theoretical saturation as the stopping
@@ -14,7 +14,7 @@ area of this eval.
 | Constant comparison | Transcripts, human labels, and judge rationales are compared continuously; memos become categories, categories become rubric revisions | `docs/memos/` is dated; `docs/rubric.yaml` carries a version and a changelog, and `tests/test_rubric.py` fails if any changelog entry does not cite an existing memo |
 | Theoretical sampling | Each scenario batch is written where the emerging theory is thin, never 120 items up front | `docs/sampling-log.md` records each batch's reason; the pilot's spines are batch 1 |
 | Theoretical saturation | Stop when new items stop producing new categories, and report the evidence | Saturation evidence will be a required section of the final run record (planned; the run record does not yet carry it) |
-| All is data | The PI's clinical notes, labeler disagreements at the pass/fail border, judge rationales, and the older-adult interviews in the IRB study feed the same comparison | IRB plan in the full proposal; `phi-scrub` (a separate redaction tool by the co-PI, not yet wired into this harness) on any real text |
+| All is data | The PI's clinical notes, labeler disagreements at the pass/fail border, judge rationales, and the older-adult interviews in the IRB study feed the same comparison | IRB plan in the full proposal; `phi-scrub` (a separate redaction tool by the technical lead, not yet wired into this harness) on any real text |
 
 Glaser's criteria are the eval's validity criteria: **fit** (items map cleanly to a defined harm),
 **work** (the eval discriminates between models; the between-model spread is the check),
@@ -45,7 +45,7 @@ toward that vocabulary. The model is therefore treated as a coder whose forcing 
 | Order permutation | The same incidents in random orders; does the same core category emerge? | Measures stability, not forcing |
 | Memos as data | Every code carries the comparison memo that produced it; theoretical sorting stays human | |
 | Saturation curve | New categories and properties per batch of five incidents, recorded in the coding result; plotting is planned | |
-| Forcing audit | Overlap of emergent categories with (a) incidents open-coded blind by the PI and co-PI before seeing any model codes, and (b) named-theory and construct vocabulary | (b) alone is weak: transcripts about dying will overlap with dying vocabulary |
+| Forcing audit | Overlap of emergent categories with (a) incidents open-coded blind by the PI and technical lead before seeing any model codes, and (b) named-theory and construct vocabulary | (b) alone is weak: transcripts about dying will overlap with dying vocabulary |
 
 The blind-human comparator (a) is the strongest of these measures, and as implemented it is a
 lexical diagnostic: token overlap between human code strings and category names, which a negation

@@ -39,7 +39,7 @@ html,body{{margin:0;padding:0}} body{{width:1280px;height:640px;overflow:hidden;
 p.tag{{font-size:27px;color:#5b6470;margin:0 0 30px;line-height:1.25}} svg{{width:1136px;height:auto;display:block}}
 .foot{{position:absolute;bottom:34px;left:72px;right:72px;display:flex;justify-content:space-between;font-size:21px;color:#1f3a5f}}
 </style></head><body><div class="wrap"><h1>KŪPUNA-AI Bench <span>"Let's talk story."</span></h1><p class="tag">Measuring overrefusal and harmful compliance in AI conversations with older adults</p>{svg}</div>
-<div class="foot"><span>github.com/JeremyGracey-AI/kupuna-bench-public</span><span>The Gerontechnology Foundation</span></div></body></html>""", encoding="utf-8")
+<div class="foot"><span>github.com/JeremyGracey-AI/kupuna-bench-public</span><span>The Gerontechnology Group, LLC</span></div></body></html>""", encoding="utf-8")
 PY
 rm -f "$SOCIAL"
 "$BIN" --headless=new --disable-gpu --no-first-run --no-default-browser-check \

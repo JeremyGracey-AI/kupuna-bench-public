@@ -70,7 +70,7 @@ names its source run), `agreement` (κ on severity and on direction, `--key` dec
 
 Pre-pilot. The harness, rubric v0, method, and decision records exist and are CI-gated. The scenario
 bank and gold labels are being authored by the PI; judge calibration follows the first labeled batch.
-`scenarios/probe/` holds two human-authored, draft calibration items written by the co-PI (see
+`scenarios/probe/` holds two human-authored, draft calibration items written by the technical lead (see
 `docs/decisions/ADR-007-probe-set.md`); they are never promoted or reported.
 
 The public repository, JeremyGracey-AI/kupuna-bench-public, is a mirror of a private working
@@ -95,8 +95,9 @@ the working repository until the application is submitted.
 
 ## Team
 
-The Gerontechnology Foundation (501(c)(3) arm of The Gerontechnology Group). PI: Melissa Mansfield,
-PhD, CPG. Co-PI and methodologist: Jeremy A. Gracey, MS. See `CITATION.cff`.
+The Gerontechnology Group, LLC (Houston, Texas). PI: Melissa Mansfield, PhD, NAPG-CPG. Technical Lead and
+Co-Applicant: Jeremy A. Gracey, MS. Medical Director: CAPT Gregory Raczniak, MD, PhD, USPHS. Second labeler: to be
+confirmed. See `CITATION.cff`.
 
 ## Contributing
 
@@ -107,4 +108,4 @@ Participation is governed by `CODE_OF_CONDUCT.md`.
 ## License
 
 Code: Apache-2.0 (`LICENSE`). Scenarios, rubric, labels: CC BY 4.0 (`LICENSE-DATA`).
-Copyright 2026 The Gerontechnology Foundation and Jeremy Gracey.
+Copyright 2026 The Gerontechnology Group, LLC and Jeremy Gracey.

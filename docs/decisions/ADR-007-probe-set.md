@@ -6,7 +6,7 @@ model's answer. `PIVOT.md` (2026-09-08) calls for a 72-hour go/no-go on that ass
 the PI's `scenarios/v0/` spines exist, so the harness needs something runnable now.
 
 ## Decision
-`scenarios/probe/` holds probe spines authored by a human (Jeremy Gracey, co-PI), formatted to
+`scenarios/probe/` holds probe spines authored by a human (Jeremy Gracey, technical lead), formatted to
 YAML by Claude; every item is `status: draft` with `reviewed_by` unset. They are engineering
 calibration only: never promoted, never reported as results, and never cited in `docs/eoi/`.
 `scenarios/v0/` stays reserved for PI-authored, promotable items. Runs on the probe set carry
