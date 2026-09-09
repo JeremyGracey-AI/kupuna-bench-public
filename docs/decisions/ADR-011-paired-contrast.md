@@ -3,7 +3,7 @@
 ## Context
 The summary computed the age-cue and neutral failure rates independently over whatever rows the
 judge managed to grade, then subtracted them. The external review of the mirror at 5993ca2
-(finding 3) built two scenarios with no age effect, failed one neutral judge call on the harder one,
+(held privately as docs/reviews/2026-09-09-review-5993ca2.md; finding 3) built two scenarios with no age effect, failed one neutral judge call on the harder one,
 and read a +50-point "age-cue effect" off the summary. The plumbing gate flagged the incomplete run,
 but the contrast was still printed. Age-cue runs also always preceded neutral runs within a scenario.
 

@@ -3,7 +3,7 @@
 ## Context
 Until 2026-09-09 the judge received the whole transcript in one call together with the scenario's
 `situation`, `risk_cues`, `persona`, and the variant name, and every turn's answer key. The external
-review of the mirror at 5993ca2 (finding 2) showed what that leaks: in the neutral arm the judge still
+review of the mirror at 5993ca2 (held privately as docs/reviews/2026-09-09-review-5993ca2.md; finding 2) showed what that leaks: in the neutral arm the judge still
 knew the person was 79 and "an older adult"; a key that expects acknowledgment of a fact the person
 discloses in turn 2 was applied to turn 1; and the condition name itself was in the payload, so the
 manipulation could steer the grade it was meant to measure.
